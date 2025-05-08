@@ -1,0 +1,179 @@
+package users_test
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"testing"
+	"time"
+
+	"atomicgo.dev/assert"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+
+	adapterHTTP "github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/http"
+)
+
+var client *mongo.Client
+var db *mongo.Database
+
+func TestMain(m *testing.M) {
+	os.Setenv("APP__ENV", "test")
+	clientOptions := options.Client().ApplyURI("mongodb://mongou:mongop@localhost:27017/?authSource=admin")
+	var err error
+	client, err = mongo.Connect(context.Background(), clientOptions)
+	if err != nil {
+		log.Fatalf("Failed to connect to MongoDB: %v", err)
+	}
+
+	db = client.Database("_test")
+	err = db.Drop(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to drop test database: %v", err)
+	}
+	err = db.CreateCollection(context.Background(), "users")
+	if err != nil {
+		log.Fatalf("Failed to create test collection: %v", err)
+	}
+
+	m.Run()
+
+	err = client.Disconnect(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to disconnect MongoDB: %v", err)
+	}
+
+}
+
+func TestCreateUser(t *testing.T) {
+	go func() {
+		server := adapterHTTP.NewServer()
+		if err := server.ListenAndServe(); err != nil {
+			panic(err)
+		}
+	}()
+	time.Sleep(1 * time.Second)
+	// Test: POST /users
+	t.Run("POST /users", func(t *testing.T) {
+		jsonBody := []byte(`
+			{
+				"name": "John Doe",
+				"email": "john@doe.com",
+				"password": "password123"
+			}
+		`)
+
+		resp, err := http.Post("http://localhost:8888/api/users", "application/json", bytes.NewBuffer(jsonBody))
+		if err != nil {
+			t.Fatalf("Failed to send request: %v", err)
+		}
+
+		if resp.StatusCode > 299 || resp.StatusCode < 200 {
+			t.Fatalf("Expected status code 200, got %d", resp.StatusCode)
+		}
+
+		defer resp.Body.Close()
+		if _, err := io.ReadAll(resp.Body); err != nil {
+			t.Fatalf("Failed to read response body: %v", err)
+		}
+	})
+
+	userID := ""
+	t.Run("GET /users", func(t *testing.T) {
+		resp, err := http.Get("http://localhost:8888/api/users")
+		if err != nil {
+			t.Fatalf("Failed to send request: %v", err)
+		}
+		body, err := io.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		if err != nil {
+			t.Fatalf("Failed to read response body: %v", err)
+		}
+		var users []map[string]interface{}
+		err = json.Unmarshal(body, &users)
+		if err != nil {
+			t.Fatalf("Failed to unmarshal response: %v", err)
+		}
+
+		if len(users) == 0 {
+			t.Fatalf("No user returned in response")
+		}
+
+		userID = users[0]["id"].(string)
+		if resp.StatusCode > 299 || resp.StatusCode < 200 {
+			t.Fatalf("Expected status code 200, got %d", resp.StatusCode)
+		}
+
+	})
+
+	t.Run("GET /users/:id", func(t *testing.T) {
+		url := fmt.Sprintf("http://localhost:8888/api/users/%s", userID)
+		resp, err := http.Get(url)
+		if err != nil {
+			t.Fatalf("Failed to send request: %v", err)
+		}
+
+		if resp.StatusCode > 299 || resp.StatusCode < 200 {
+			t.Fatalf("Expected status code 200, got %d", resp.StatusCode)
+		}
+	})
+
+	t.Run("PATCH /users/:id", func(t *testing.T) {
+		url := fmt.Sprintf("http://localhost:8888/api/users/%s", userID)
+		jsonBody := []byte(`
+			{
+				"email": "Doe@John.com"
+			}`)
+
+		req, err := http.NewRequest(http.MethodPatch, url, bytes.NewBuffer(jsonBody))
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("Failed to send request: %v", err)
+		}
+		defer resp.Body.Close()
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("Failed to read response body: %v", err)
+		}
+		var user map[string]interface{}
+		err = json.Unmarshal(body, &user)
+		if err != nil {
+			t.Fatalf("Failed to unmarshal response: %v", err)
+		}
+
+		if resp.StatusCode > 299 || resp.StatusCode < 200 {
+			t.Fatalf("Expected status code 200, got %d", resp.StatusCode)
+		}
+
+		// Assert response code
+		assert.Equal(user["email"], "Doe@John.com")
+	})
+
+	t.Run("DELETE /users/:id", func(t *testing.T) {
+		url := fmt.Sprintf("http://localhost:8888/api/users/%s", userID)
+		req, err := http.NewRequest(http.MethodDelete, url, nil)
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("Failed to send request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode > 299 || resp.StatusCode < 200 {
+			t.Fatalf("Expected status code 200, got %d", resp.StatusCode)
+		}
+	})
+}

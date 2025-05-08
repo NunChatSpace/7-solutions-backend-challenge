@@ -1,0 +1,35 @@
+// user.proto
+syntax = "proto3";
+
+package user;
+
+option go_package = "/internal/adapter/grpc/gen/userpb";
+
+message User {
+  string id = 1;
+  string email = 2;
+  string password = 3;
+  string status = 4;
+}
+
+message CreateUserRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message CreateUserResponse {
+  User user = 1;
+}
+
+message GetUserRequest {
+  string id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+service UserService {
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+}

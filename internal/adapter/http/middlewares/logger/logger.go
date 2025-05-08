@@ -33,7 +33,9 @@ func Handler(ctx *atreugo.RequestCtx) error {
 
 	// add request data
 
-	var entry *logrus.Entry
+	entry := logger.WithFields(logrus.Fields{
+		"method": ctx.Method(),
+		"path":   ctx.Path()})
 
 	// add request payload
 	body := ctx.RequestCtx.Request.Body()

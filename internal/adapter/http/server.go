@@ -1,17 +1,15 @@
 package http
 
 import (
-	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/database/postgres/repositories"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/http/handlers"
-	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/http/middlewares/database"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/http/middlewares/logger"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/config"
+	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/di"
 	"github.com/savsgio/atreugo/v11"
 )
 
 func NewServer() *atreugo.Atreugo {
 	cfg, _ := config.LoadConfig()
-	repo := repositories.NewRepository(cfg)
 	config := atreugo.Config{
 		Addr: cfg.App.Port,
 	}
@@ -25,11 +23,9 @@ func NewServer() *atreugo.Atreugo {
 		return ctx.Next()
 	})
 	server.UseBefore(logger.Handler)
-	server.UseBefore(func(rc *atreugo.RequestCtx) error {
-		return database.Handler(rc, repo)
-	})
 
-	handlers.InitRoutes(server)
+	deps := di.NewDependency(cfg)
+	handlers.InitRoutes(server, deps)
 
 	return server
 }

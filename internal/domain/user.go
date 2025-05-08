@@ -1,10 +1,11 @@
 package domain
 
-import "gorm.io/gorm"
-
 type User struct {
-	gorm.Model
-	Name     string `json:"name" gorm:"not null"`
-	Email    string `json:"email" gorm:"not null;unique"`
-	Password string `gorm:"not null"`
+	ID        *string `json:"id" bson:"_id,omitempty"`
+	Name      *string `json:"name" bson:"name"`
+	Email     *string `json:"email"  bson:"email"`
+	Password  *string `bson:"password"`
+	CreatedAt *string `json:"created_at" bson:"created_at"`
+	UpdatedAt *string `json:"updated_at" bson:"updated_at"`
+	DeletedAt *string `json:"deleted_at" bson:"deleted_at"`
 }
