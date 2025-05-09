@@ -34,6 +34,20 @@ func (m *MockRepository) EXPECT() *MockRepositoryMockRecorder {
 	return m.recorder
 }
 
+// Session mocks base method.
+func (m *MockRepository) Session() database.ISessionRepository {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Session")
+	ret0, _ := ret[0].(database.ISessionRepository)
+	return ret0
+}
+
+// Session indicates an expected call of Session.
+func (mr *MockRepositoryMockRecorder) Session() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Session", reflect.TypeOf((*MockRepository)(nil).Session))
+}
+
 // User mocks base method.
 func (m *MockRepository) User() database.IUserRepository {
 	m.ctrl.T.Helper()

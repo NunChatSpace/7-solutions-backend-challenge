@@ -1,6 +1,8 @@
 package userservices
 
 import (
+	"errors"
+
 	dbrepo "github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/database"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/domain"
 )
@@ -11,6 +13,8 @@ type Port interface {
 	CreateUser(user *domain.User) error
 	UpdateUser(id string, user *domain.User) (*domain.User, error)
 	DeleteUser(id string) error
+
+	Authenticate(user *domain.User) (*domain.User, error)
 }
 
 type userService struct {
@@ -60,4 +64,16 @@ func (s *userService) DeleteUser(id string) error {
 		return err
 	}
 	return nil
+}
+
+func (s *userService) Authenticate(user *domain.User) (*domain.User, error) {
+	users, err := s.SearchUsers(*user)
+	if err != nil {
+		return nil, err
+	}
+	if len(users) > 1 {
+		return nil, errors.New("multiple users found")
+	}
+
+	return users[0], nil
 }

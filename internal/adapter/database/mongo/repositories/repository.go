@@ -12,7 +12,8 @@ import (
 )
 
 type RepositoryImpl struct {
-	userRepo database.IUserRepository
+	userRepo    database.IUserRepository
+	sessionRepo database.ISessionRepository
 }
 
 func NewMongoRepository(cfg *config.Config) (database.Repository, error) {
@@ -26,7 +27,7 @@ func NewMongoRepository(cfg *config.Config) (database.Repository, error) {
 		cfg.Database.MongoDB.Host,
 		cfg.Database.MongoDB.Port,
 	)
-	fmt.Println(mongoURI)
+
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		return nil, err

@@ -35,7 +35,7 @@ func (m *MockIUserRepository) EXPECT() *MockIUserRepositoryMockRecorder {
 }
 
 // DeleteUser mocks base method.
-func (m *MockIUserRepository) DeleteUser(id int) error {
+func (m *MockIUserRepository) DeleteUser(id string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteUser", id)
 	ret0, _ := ret[0].(error)
@@ -49,7 +49,7 @@ func (mr *MockIUserRepositoryMockRecorder) DeleteUser(id interface{}) *gomock.Ca
 }
 
 // GetUserByID mocks base method.
-func (m *MockIUserRepository) GetUserByID(id int) (*domain.User, error) {
+func (m *MockIUserRepository) GetUserByID(id string) (*domain.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserByID", id)
 	ret0, _ := ret[0].(*domain.User)
