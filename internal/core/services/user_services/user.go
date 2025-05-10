@@ -1,15 +1,18 @@
 package userservices
 
 import (
-	"errors"
+	"fmt"
 
 	dbrepo "github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/database"
+	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/config"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/domain"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Port interface {
-	GetUserByID(id string) (*domain.User, error)
-	SearchUsers(user domain.User) ([]*domain.User, error)
+	GetUserByID(id string) (*domain.UserResponse, error)
+	SearchUsers(user domain.User) ([]*domain.UserResponse, error)
+	SearchUsersForAuth(user domain.User) ([]*domain.User, error)
 	CreateUser(user *domain.User) error
 	UpdateUser(id string, user *domain.User) (*domain.User, error)
 	DeleteUser(id string) error
@@ -19,15 +22,17 @@ type Port interface {
 
 type userService struct {
 	Repository dbrepo.Repository
+	Config     *config.Config
 }
 
-func NewUserService(repo dbrepo.Repository) Port {
+func NewUserService(repo dbrepo.Repository, cfg *config.Config) Port {
 	return &userService{
 		Repository: repo,
+		Config:     cfg,
 	}
 }
 
-func (s *userService) GetUserByID(id string) (*domain.User, error) {
+func (s *userService) GetUserByID(id string) (*domain.UserResponse, error) {
 	// Implementation for getting a user by ID
 	user, err := s.Repository.User().GetUserByID(id)
 	if err != nil {
@@ -36,9 +41,19 @@ func (s *userService) GetUserByID(id string) (*domain.User, error) {
 
 	return user, nil
 }
-func (s *userService) SearchUsers(user domain.User) ([]*domain.User, error) {
+func (s *userService) SearchUsers(user domain.User) ([]*domain.UserResponse, error) {
 	// Implementation for searching users
 	users, err := s.Repository.User().Search(user)
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func (s *userService) SearchUsersForAuth(user domain.User) ([]*domain.User, error) {
+	// Implementation for searching users
+	users, err := s.Repository.User().SearchForAuth(user)
 	if err != nil {
 		return nil, err
 	}
@@ -67,13 +82,32 @@ func (s *userService) DeleteUser(id string) error {
 }
 
 func (s *userService) Authenticate(user *domain.User) (*domain.User, error) {
-	users, err := s.SearchUsers(*user)
+	users, err := s.SearchUsersForAuth(domain.User{
+		Email: user.Email,
+	})
 	if err != nil {
 		return nil, err
 	}
-	if len(users) > 1 {
-		return nil, errors.New("multiple users found")
+	var authenticatedUser *domain.User
+	for _, u := range users {
+		if err := s.comparePassword(*user.Password, *u.Password); err != nil {
+			continue
+		}
+
+		authenticatedUser = u
+		break
 	}
 
+	if authenticatedUser == nil {
+		return nil, fmt.Errorf("invalid email or password")
+	}
 	return users[0], nil
+}
+
+func (s userService) comparePassword(plainPassword string, hashedPassword string) error {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plainPassword))
+	if err != nil {
+		return fmt.Errorf("invalid password")
+	}
+	return nil
 }

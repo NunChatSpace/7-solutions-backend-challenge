@@ -17,7 +17,6 @@ func InitRoutes(router *atreugo.Router, deps *di.Dependency) {
 
 		userService := deps.Services.User()
 		users, err := userService.SearchUsers(*user)
-
 		if err != nil {
 			return rc.ErrorResponse(err)
 		}

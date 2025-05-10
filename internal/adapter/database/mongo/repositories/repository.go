@@ -40,6 +40,7 @@ func NewMongoRepository(cfg *config.Config) (database.Repository, error) {
 	db := client.Database(cfg.Database.MongoDB.DatabaseName)
 
 	return &RepositoryImpl{
-		userRepo: NewUserRepository(db),
+		userRepo:    NewUserRepository(db),
+		sessionRepo: NewSessionRepository(db),
 	}, nil
 }

@@ -50,7 +50,7 @@ func TestMain(m *testing.M) {
 
 }
 
-func TestCreateUser(t *testing.T) {
+func TestUserAPIs(t *testing.T) {
 	go func() {
 		server := adapterHTTP.NewServer()
 		if err := server.ListenAndServe(); err != nil {
@@ -68,7 +68,7 @@ func TestCreateUser(t *testing.T) {
 			}
 		`)
 
-		resp, err := http.Post("http://localhost:8888/api/users", "application/json", bytes.NewBuffer(jsonBody))
+		resp, err := http.Post("http://localhost:8888/api/v1/users", "application/json", bytes.NewBuffer(jsonBody))
 		if err != nil {
 			t.Fatalf("Failed to send request: %v", err)
 		}
@@ -85,7 +85,7 @@ func TestCreateUser(t *testing.T) {
 
 	userID := ""
 	t.Run("GET /users", func(t *testing.T) {
-		resp, err := http.Get("http://localhost:8888/api/users")
+		resp, err := http.Get("http://localhost:8888/api/v1/users")
 		if err != nil {
 			t.Fatalf("Failed to send request: %v", err)
 		}
@@ -112,7 +112,7 @@ func TestCreateUser(t *testing.T) {
 	})
 
 	t.Run("GET /users/:id", func(t *testing.T) {
-		url := fmt.Sprintf("http://localhost:8888/api/users/%s", userID)
+		url := fmt.Sprintf("http://localhost:8888/api/v1/users/%s", userID)
 		resp, err := http.Get(url)
 		if err != nil {
 			t.Fatalf("Failed to send request: %v", err)
@@ -124,7 +124,7 @@ func TestCreateUser(t *testing.T) {
 	})
 
 	t.Run("PATCH /users/:id", func(t *testing.T) {
-		url := fmt.Sprintf("http://localhost:8888/api/users/%s", userID)
+		url := fmt.Sprintf("http://localhost:8888/api/v1/users/%s", userID)
 		jsonBody := []byte(`
 			{
 				"email": "Doe@John.com"
@@ -160,7 +160,7 @@ func TestCreateUser(t *testing.T) {
 	})
 
 	t.Run("DELETE /users/:id", func(t *testing.T) {
-		url := fmt.Sprintf("http://localhost:8888/api/users/%s", userID)
+		url := fmt.Sprintf("http://localhost:8888/api/v1/users/%s", userID)
 		req, err := http.NewRequest(http.MethodDelete, url, nil)
 		if err != nil {
 			t.Fatalf("Failed to create request: %v", err)
@@ -175,5 +175,71 @@ func TestCreateUser(t *testing.T) {
 		if resp.StatusCode > 299 || resp.StatusCode < 200 {
 			t.Fatalf("Expected status code 200, got %d", resp.StatusCode)
 		}
+	})
+
+	t.Run("TestCreateAndLoginAndAuthenticateUser", func(t *testing.T) {
+		jsonBody := []byte(`
+		{
+			"name": "John Doe",
+			"email": "john@doe123.com",
+			"password": "password123"
+		}
+	`)
+
+		resp1, err := http.Post("http://localhost:8888/api/v1/users", "application/json", bytes.NewBuffer(jsonBody))
+		if err != nil {
+			t.Fatalf("Failed to send request: %v", err)
+		}
+		defer resp1.Body.Close()
+		if _resp1body, err := io.ReadAll(resp1.Body); err != nil {
+			t.Fatalf("Failed to read response body: %v", err)
+		} else {
+			fmt.Println("resp1body", string(_resp1body))
+		}
+		if resp1.StatusCode > 299 || resp1.StatusCode < 200 {
+			t.Fatalf("Expected status code 200, got %d", resp1.StatusCode)
+		}
+		loginBody := []byte(`
+		{
+			"email": "john@doe123.com",
+			"password": "password123"
+		}
+	`)
+
+		resp2, err := http.Post("http://localhost:8888/api/v1/sessions", "application/json", bytes.NewBuffer(loginBody))
+		if err != nil {
+			t.Fatalf("Failed to send request: %v", err)
+		}
+		defer resp2.Body.Close()
+		resp2body := make(map[string]interface{})
+		if _resp2body, err := io.ReadAll(resp2.Body); err != nil {
+			t.Fatalf("Failed to read response body: %v", err)
+		} else {
+			if err := json.Unmarshal(_resp2body, &resp2body); err != nil {
+				t.Fatalf("Failed to unmarshal response: %v", err)
+			}
+		}
+		fmt.Println("resp2.StatusCode", (resp2.StatusCode))
+		if resp2.StatusCode > 299 || resp2.StatusCode < 200 {
+			t.Fatalf("Expected status code 200, got %d", resp2.StatusCode)
+		}
+
+		req, err := http.NewRequest("GET", "http://localhost:8888/api/v1/users", nil)
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", resp2body["access_token"]))
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatalf("Failed to send request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("Failed to read response body: %v", err)
+		}
+		fmt.Println("respBody", string(body))
 	})
 }

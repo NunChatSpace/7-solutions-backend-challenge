@@ -24,7 +24,6 @@ func InitRoutes(router *atreugo.Router, deps *di.Dependency) {
 		if err != nil {
 			return rc.ErrorResponse(err)
 		}
-
 		session, err := sessionService.CreateSession(*user.ID)
 		if err != nil {
 			return rc.ErrorResponse(err)
@@ -44,7 +43,12 @@ func InitRoutes(router *atreugo.Router, deps *di.Dependency) {
 		if err != nil {
 			return rc.ErrorResponse(err)
 		}
-		accessToken, refreshToken, err := authService.GenerateTokens(token.UserID, token.SessionID)
+		tokenInfo := domain.TokenInfo{
+			UserID:    token.UserID,
+			SessionID: token.SessionID,
+			Type:      "access_token",
+		}
+		accessToken, refreshToken, err := authService.GenerateTokens(tokenInfo)
 		if err != nil {
 			return rc.ErrorResponse(err)
 		}

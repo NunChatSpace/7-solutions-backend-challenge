@@ -49,12 +49,6 @@ func Handler(ctx *atreugo.RequestCtx) error {
 		ctx.SetUserValue("body", body)
 	}
 
-	// add actor
-	// a := actor.FromContext(ctx)
-	// if a != nil && a.ID != 0 {
-	// 	entry = entry.WithField("user_id", a.ID)
-	// }
-
 	ctx.RequestCtx.SetUserValue(&loggerKey{}, entry)
 	return ctx.Next()
 }

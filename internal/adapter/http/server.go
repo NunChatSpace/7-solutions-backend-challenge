@@ -2,6 +2,7 @@ package http
 
 import (
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/http/handlers"
+	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/http/middlewares/authen"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/http/middlewares/logger"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/config"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/di"
@@ -9,10 +10,14 @@ import (
 )
 
 func NewServer() *atreugo.Atreugo {
-	cfg, _ := config.LoadConfig()
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		panic(err)
+	}
 	config := atreugo.Config{
 		Addr: cfg.App.Port,
 	}
+	deps := di.NewDependency(cfg)
 
 	server := atreugo.New(config)
 	server.UseBefore(func(ctx *atreugo.RequestCtx) error {
@@ -23,8 +28,13 @@ func NewServer() *atreugo.Atreugo {
 		return ctx.Next()
 	})
 	server.UseBefore(logger.Handler)
-
-	deps := di.NewDependency(cfg)
+	server.UseBefore(func(rc *atreugo.RequestCtx) error {
+		err := authen.Handler(rc, deps)
+		if err != nil {
+			return rc.ErrorResponse(err)
+		}
+		return rc.Next()
+	})
 	handlers.InitRoutes(server, deps)
 
 	return server

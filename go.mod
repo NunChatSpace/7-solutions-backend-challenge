@@ -6,6 +6,7 @@ toolchain go1.23.9
 
 require (
 	atomicgo.dev/assert v0.0.2
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/golang/mock v1.6.0
 	github.com/jinzhu/configor v1.2.2
 	github.com/joho/godotenv v1.5.1

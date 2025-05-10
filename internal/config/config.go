@@ -39,6 +39,10 @@ type Config struct {
 		Level  string `env:"LOG__LEVEL" default:"trace"`
 		Format string `env:"LOG__FORMAT" default:"console"`
 	}
+
+	JWT struct {
+		SecretKey string `default:"secret" env:"JWT__SECRET_KEY"`
+	}
 }
 
 func LoadConfig() (*Config, error) {

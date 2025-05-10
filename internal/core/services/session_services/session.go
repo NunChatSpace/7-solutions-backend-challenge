@@ -2,6 +2,7 @@ package sessionservices
 
 import (
 	dbrepo "github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/database"
+	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/config"
 	authservices "github.com/NunChatSpace/7-solutions-backend-challenge/internal/core/services/auth_services"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/domain"
 )
@@ -14,16 +15,18 @@ type Port interface {
 
 type sessionService struct {
 	Repository dbrepo.Repository
+	Config     *config.Config
+	Actor      *domain.User
 }
 
-func NewSessionService(repo dbrepo.Repository) Port {
+func NewSessionService(repo dbrepo.Repository, cfg *config.Config) Port {
 	return &sessionService{
 		Repository: repo,
+		Config:     cfg,
 	}
 }
 
 func (s *sessionService) CreateSession(userID string) (*domain.Tokens, error) {
-	// Implementation for creating a session
 	session := &domain.Session{
 		UserID: &userID,
 	}
@@ -32,8 +35,18 @@ func (s *sessionService) CreateSession(userID string) (*domain.Tokens, error) {
 		return nil, err
 	}
 
-	jwtService := authservices.NewAuthService(s.Repository)
-	accessToken, refreshToken, err := jwtService.GenerateTokens(userID, *_session.ID)
+	user, err := s.Repository.User().GetUserByID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	jwtService := authservices.NewAuthService(s.Repository, s.Config)
+	tokenInfo := domain.TokenInfo{
+		UserID:    userID,
+		SessionID: *_session.ID,
+		Scopes:    *user.Scopes,
+	}
+	accessToken, refreshToken, err := jwtService.GenerateTokens(tokenInfo)
 	if err != nil {
 		return nil, err
 	}
