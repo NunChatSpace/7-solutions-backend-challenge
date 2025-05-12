@@ -13,14 +13,17 @@ import (
 
 func InitRoutes(router *atreugo.Router, deps *di.Dependency) {
 	router.POST("/sessions", func(rc *atreugo.RequestCtx) error {
-		body, err := common.BindBodyToStruct[domain.User](rc)
+		body, err := common.BindBodyToStruct[loginRequest](rc)
 		if err != nil {
 			return rc.ErrorResponse(err)
 		}
 
 		userService := deps.Services.User()
 		sessionService := deps.Services.Session()
-		user, err := userService.Authenticate(body)
+		user, err := userService.Authenticate(&domain.User{
+			Email:    &body.Email,
+			Password: &body.Password,
+		})
 		if err != nil {
 			return rc.ErrorResponse(err)
 		}
@@ -33,7 +36,7 @@ func InitRoutes(router *atreugo.Router, deps *di.Dependency) {
 	})
 
 	router.POST("/sessions/refresh", func(rc *atreugo.RequestCtx) error {
-		body, err := common.BindBodyToStruct[domain.Tokens](rc)
+		body, err := common.BindBodyToStruct[refreshTokenRequest](rc)
 		if err != nil {
 			return rc.ErrorResponse(err)
 		}

@@ -17,6 +17,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	adapterHTTP "github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/http"
+	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/config"
+	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/di"
+	"github.com/savsgio/atreugo/v11"
 )
 
 var client *mongo.Client
@@ -52,7 +55,16 @@ func TestMain(m *testing.M) {
 
 func TestUserAPIs(t *testing.T) {
 	go func() {
-		server := adapterHTTP.NewServer()
+		cfg, err := config.LoadConfig()
+		if err != nil {
+			panic(err)
+		}
+
+		config := atreugo.Config{
+			Addr: cfg.App.Port,
+		}
+		deps := di.NewDependency(cfg)
+		server := adapterHTTP.NewServer(deps, config)
 		if err := server.ListenAndServe(); err != nil {
 			panic(err)
 		}

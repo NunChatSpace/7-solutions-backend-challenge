@@ -6,6 +6,7 @@ import (
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/config"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/core/services"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/domain"
+	"github.com/sirupsen/logrus"
 )
 
 type Dependency struct {
@@ -13,6 +14,7 @@ type Dependency struct {
 	Repositories database.Repository
 	Services     services.IServices
 	Actor        *domain.User
+	Logger       *logrus.Entry
 }
 
 func NewDependency(cfg *config.Config) *Dependency {

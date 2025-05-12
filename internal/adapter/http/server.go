@@ -4,22 +4,12 @@ import (
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/http/handlers"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/http/middlewares/authen"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/http/middlewares/logger"
-	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/config"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/di"
 	"github.com/savsgio/atreugo/v11"
 )
 
-func NewServer() *atreugo.Atreugo {
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		panic(err)
-	}
-	config := atreugo.Config{
-		Addr: cfg.App.Port,
-	}
-	deps := di.NewDependency(cfg)
-
-	server := atreugo.New(config)
+func NewServer(deps *di.Dependency, cfg atreugo.Config) *atreugo.Atreugo {
+	server := atreugo.New(cfg)
 	server.UseBefore(func(ctx *atreugo.RequestCtx) error {
 		ctx.Response.Header.Set("Access-Control-Allow-Origin", "*")
 		ctx.Response.Header.Set("Access-Control-Allow-Headers", "Content-Type, X-Custom")
@@ -27,7 +17,9 @@ func NewServer() *atreugo.Atreugo {
 		ctx.Response.Header.Set("Access-Control-Expose-Headers", "Content-Length, Authorization")
 		return ctx.Next()
 	})
-	server.UseBefore(logger.Handler)
+	server.UseBefore(func(rc *atreugo.RequestCtx) error {
+		return logger.Handler(rc, deps)
+	})
 	server.UseBefore(func(rc *atreugo.RequestCtx) error {
 		err := authen.Handler(rc, deps)
 		if err != nil {

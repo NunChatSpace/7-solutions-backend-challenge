@@ -26,9 +26,12 @@ const (
 type User struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Email         string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
-	Password      string                 `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty"`
-	Status        string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	Password      string                 `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty"`
+	CreatedAt     string                 `protobuf:"bytes,5,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	UpdatedAt     string                 `protobuf:"bytes,6,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
+	Scopes        map[string]int32       `protobuf:"bytes,7,rep,name=scopes,proto3" json:"scopes,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -70,6 +73,13 @@ func (x *User) GetId() string {
 	return ""
 }
 
+func (x *User) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
 func (x *User) GetEmail() string {
 	if x != nil {
 		return x.Email
@@ -84,11 +94,109 @@ func (x *User) GetPassword() string {
 	return ""
 }
 
-func (x *User) GetStatus() string {
+func (x *User) GetCreatedAt() string {
 	if x != nil {
-		return x.Status
+		return x.CreatedAt
 	}
 	return ""
+}
+
+func (x *User) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+func (x *User) GetScopes() map[string]int32 {
+	if x != nil {
+		return x.Scopes
+	}
+	return nil
+}
+
+type UserResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	CreatedAt     string                 `protobuf:"bytes,4,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	UpdatedAt     string                 `protobuf:"bytes,5,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
+	Scopes        map[string]int32       `protobuf:"bytes,6,rep,name=scopes,proto3" json:"scopes,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserResponse) Reset() {
+	*x = UserResponse{}
+	mi := &file_internal_adapter_grpc_proto_user_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserResponse) ProtoMessage() {}
+
+func (x *UserResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_adapter_grpc_proto_user_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserResponse.ProtoReflect.Descriptor instead.
+func (*UserResponse) Descriptor() ([]byte, []int) {
+	return file_internal_adapter_grpc_proto_user_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *UserResponse) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *UserResponse) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *UserResponse) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *UserResponse) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *UserResponse) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+func (x *UserResponse) GetScopes() map[string]int32 {
+	if x != nil {
+		return x.Scopes
+	}
+	return nil
 }
 
 type CreateUserRequest struct {
@@ -101,7 +209,7 @@ type CreateUserRequest struct {
 
 func (x *CreateUserRequest) Reset() {
 	*x = CreateUserRequest{}
-	mi := &file_internal_adapter_grpc_proto_user_proto_msgTypes[1]
+	mi := &file_internal_adapter_grpc_proto_user_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -113,7 +221,7 @@ func (x *CreateUserRequest) String() string {
 func (*CreateUserRequest) ProtoMessage() {}
 
 func (x *CreateUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_adapter_grpc_proto_user_proto_msgTypes[1]
+	mi := &file_internal_adapter_grpc_proto_user_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -126,7 +234,7 @@ func (x *CreateUserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateUserRequest.ProtoReflect.Descriptor instead.
 func (*CreateUserRequest) Descriptor() ([]byte, []int) {
-	return file_internal_adapter_grpc_proto_user_proto_rawDescGZIP(), []int{1}
+	return file_internal_adapter_grpc_proto_user_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CreateUserRequest) GetEmail() string {
@@ -145,14 +253,14 @@ func (x *CreateUserRequest) GetPassword() string {
 
 type CreateUserResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	User          *UserResponse          `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateUserResponse) Reset() {
 	*x = CreateUserResponse{}
-	mi := &file_internal_adapter_grpc_proto_user_proto_msgTypes[2]
+	mi := &file_internal_adapter_grpc_proto_user_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -164,7 +272,7 @@ func (x *CreateUserResponse) String() string {
 func (*CreateUserResponse) ProtoMessage() {}
 
 func (x *CreateUserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_adapter_grpc_proto_user_proto_msgTypes[2]
+	mi := &file_internal_adapter_grpc_proto_user_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -177,10 +285,10 @@ func (x *CreateUserResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateUserResponse.ProtoReflect.Descriptor instead.
 func (*CreateUserResponse) Descriptor() ([]byte, []int) {
-	return file_internal_adapter_grpc_proto_user_proto_rawDescGZIP(), []int{2}
+	return file_internal_adapter_grpc_proto_user_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *CreateUserResponse) GetUser() *User {
+func (x *CreateUserResponse) GetUser() *UserResponse {
 	if x != nil {
 		return x.User
 	}
@@ -196,7 +304,7 @@ type GetUserRequest struct {
 
 func (x *GetUserRequest) Reset() {
 	*x = GetUserRequest{}
-	mi := &file_internal_adapter_grpc_proto_user_proto_msgTypes[3]
+	mi := &file_internal_adapter_grpc_proto_user_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -208,7 +316,7 @@ func (x *GetUserRequest) String() string {
 func (*GetUserRequest) ProtoMessage() {}
 
 func (x *GetUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_adapter_grpc_proto_user_proto_msgTypes[3]
+	mi := &file_internal_adapter_grpc_proto_user_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -221,7 +329,7 @@ func (x *GetUserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserRequest.ProtoReflect.Descriptor instead.
 func (*GetUserRequest) Descriptor() ([]byte, []int) {
-	return file_internal_adapter_grpc_proto_user_proto_rawDescGZIP(), []int{3}
+	return file_internal_adapter_grpc_proto_user_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetUserRequest) GetId() string {
@@ -233,14 +341,14 @@ func (x *GetUserRequest) GetId() string {
 
 type GetUserResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	User          *UserResponse          `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetUserResponse) Reset() {
 	*x = GetUserResponse{}
-	mi := &file_internal_adapter_grpc_proto_user_proto_msgTypes[4]
+	mi := &file_internal_adapter_grpc_proto_user_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -252,7 +360,7 @@ func (x *GetUserResponse) String() string {
 func (*GetUserResponse) ProtoMessage() {}
 
 func (x *GetUserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_adapter_grpc_proto_user_proto_msgTypes[4]
+	mi := &file_internal_adapter_grpc_proto_user_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -265,10 +373,10 @@ func (x *GetUserResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserResponse.ProtoReflect.Descriptor instead.
 func (*GetUserResponse) Descriptor() ([]byte, []int) {
-	return file_internal_adapter_grpc_proto_user_proto_rawDescGZIP(), []int{4}
+	return file_internal_adapter_grpc_proto_user_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *GetUserResponse) GetUser() *User {
+func (x *GetUserResponse) GetUser() *UserResponse {
 	if x != nil {
 		return x.User
 	}
@@ -279,23 +387,37 @@ var File_internal_adapter_grpc_proto_user_proto protoreflect.FileDescriptor
 
 const file_internal_adapter_grpc_proto_user_proto_rawDesc = "" +
 	"\n" +
-	"&internal/adapter/grpc/proto/user.proto\x12\x04user\"`\n" +
+	"&internal/adapter/grpc/proto/user.proto\x12\x04user\"\x83\x02\n" +
 	"\x04User\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1a\n" +
-	"\bpassword\x18\x03 \x01(\tR\bpassword\x12\x16\n" +
-	"\x06status\x18\x04 \x01(\tR\x06status\"E\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
+	"\x05email\x18\x03 \x01(\tR\x05email\x12\x1a\n" +
+	"\bpassword\x18\x04 \x01(\tR\bpassword\x12\x1c\n" +
+	"\tcreatedAt\x18\x05 \x01(\tR\tcreatedAt\x12\x1c\n" +
+	"\tupdatedAt\x18\x06 \x01(\tR\tupdatedAt\x12.\n" +
+	"\x06scopes\x18\a \x03(\v2\x16.user.User.ScopesEntryR\x06scopes\x1a9\n" +
+	"\vScopesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\"\xf7\x01\n" +
+	"\fUserResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
+	"\x05email\x18\x03 \x01(\tR\x05email\x12\x1c\n" +
+	"\tcreatedAt\x18\x04 \x01(\tR\tcreatedAt\x12\x1c\n" +
+	"\tupdatedAt\x18\x05 \x01(\tR\tupdatedAt\x126\n" +
+	"\x06scopes\x18\x06 \x03(\v2\x1e.user.UserResponse.ScopesEntryR\x06scopes\x1a9\n" +
+	"\vScopesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\"E\n" +
 	"\x11CreateUserRequest\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"4\n" +
-	"\x12CreateUserResponse\x12\x1e\n" +
-	"\x04user\x18\x01 \x01(\v2\n" +
-	".user.UserR\x04user\" \n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\"<\n" +
+	"\x12CreateUserResponse\x12&\n" +
+	"\x04user\x18\x01 \x01(\v2\x12.user.UserResponseR\x04user\" \n" +
 	"\x0eGetUserRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"1\n" +
-	"\x0fGetUserResponse\x12\x1e\n" +
-	"\x04user\x18\x01 \x01(\v2\n" +
-	".user.UserR\x04user2\x86\x01\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"9\n" +
+	"\x0fGetUserResponse\x12&\n" +
+	"\x04user\x18\x01 \x01(\v2\x12.user.UserResponseR\x04user2\x86\x01\n" +
 	"\vUserService\x12?\n" +
 	"\n" +
 	"CreateUser\x12\x17.user.CreateUserRequest\x1a\x18.user.CreateUserResponse\x126\n" +
@@ -313,26 +435,31 @@ func file_internal_adapter_grpc_proto_user_proto_rawDescGZIP() []byte {
 	return file_internal_adapter_grpc_proto_user_proto_rawDescData
 }
 
-var file_internal_adapter_grpc_proto_user_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_internal_adapter_grpc_proto_user_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_internal_adapter_grpc_proto_user_proto_goTypes = []any{
 	(*User)(nil),               // 0: user.User
-	(*CreateUserRequest)(nil),  // 1: user.CreateUserRequest
-	(*CreateUserResponse)(nil), // 2: user.CreateUserResponse
-	(*GetUserRequest)(nil),     // 3: user.GetUserRequest
-	(*GetUserResponse)(nil),    // 4: user.GetUserResponse
+	(*UserResponse)(nil),       // 1: user.UserResponse
+	(*CreateUserRequest)(nil),  // 2: user.CreateUserRequest
+	(*CreateUserResponse)(nil), // 3: user.CreateUserResponse
+	(*GetUserRequest)(nil),     // 4: user.GetUserRequest
+	(*GetUserResponse)(nil),    // 5: user.GetUserResponse
+	nil,                        // 6: user.User.ScopesEntry
+	nil,                        // 7: user.UserResponse.ScopesEntry
 }
 var file_internal_adapter_grpc_proto_user_proto_depIdxs = []int32{
-	0, // 0: user.CreateUserResponse.user:type_name -> user.User
-	0, // 1: user.GetUserResponse.user:type_name -> user.User
-	1, // 2: user.UserService.CreateUser:input_type -> user.CreateUserRequest
-	3, // 3: user.UserService.GetUser:input_type -> user.GetUserRequest
-	2, // 4: user.UserService.CreateUser:output_type -> user.CreateUserResponse
-	4, // 5: user.UserService.GetUser:output_type -> user.GetUserResponse
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	6, // 0: user.User.scopes:type_name -> user.User.ScopesEntry
+	7, // 1: user.UserResponse.scopes:type_name -> user.UserResponse.ScopesEntry
+	1, // 2: user.CreateUserResponse.user:type_name -> user.UserResponse
+	1, // 3: user.GetUserResponse.user:type_name -> user.UserResponse
+	2, // 4: user.UserService.CreateUser:input_type -> user.CreateUserRequest
+	4, // 5: user.UserService.GetUser:input_type -> user.GetUserRequest
+	3, // 6: user.UserService.CreateUser:output_type -> user.CreateUserResponse
+	5, // 7: user.UserService.GetUser:output_type -> user.GetUserResponse
+	6, // [6:8] is the sub-list for method output_type
+	4, // [4:6] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_internal_adapter_grpc_proto_user_proto_init() }
@@ -346,7 +473,7 @@ func file_internal_adapter_grpc_proto_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_adapter_grpc_proto_user_proto_rawDesc), len(file_internal_adapter_grpc_proto_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

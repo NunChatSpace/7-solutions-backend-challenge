@@ -7,9 +7,21 @@ option go_package = "/internal/adapter/grpc/gen/userpb";
 
 message User {
   string id = 1;
-  string email = 2;
-  string password = 3;
-  string status = 4;
+  string name = 2;
+  string email = 3;
+  string password = 4;
+  string createdAt = 5;
+  string updatedAt = 6;
+  map<string, int32> scopes = 7;
+}
+
+message UserResponse {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string createdAt = 4;
+  string updatedAt = 5;
+  map<string, int32> scopes = 6;
 }
 
 message CreateUserRequest {
@@ -18,7 +30,7 @@ message CreateUserRequest {
 }
 
 message CreateUserResponse {
-  User user = 1;
+  UserResponse user = 1;
 }
 
 message GetUserRequest {
@@ -26,7 +38,7 @@ message GetUserRequest {
 }
 
 message GetUserResponse {
-  User user = 1;
+  UserResponse user = 1;
 }
 
 service UserService {

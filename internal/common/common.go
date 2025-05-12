@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/savsgio/atreugo/v11"
 )
@@ -62,4 +63,24 @@ func GetParams(rc *atreugo.RequestCtx, keys []string) map[string]string {
 	}
 
 	return params
+}
+func SafeString(ptr *string) string {
+	if ptr != nil {
+		return *ptr
+	}
+	return ""
+}
+
+func SafeTime(ptr *time.Time) string {
+	if ptr != nil {
+		return ptr.Format(time.RFC3339)
+	}
+	return ""
+}
+
+func SafeMap[K comparable, V any](m *map[K]V) map[K]V {
+	if m != nil {
+		return *m
+	}
+	return make(map[K]V)
 }

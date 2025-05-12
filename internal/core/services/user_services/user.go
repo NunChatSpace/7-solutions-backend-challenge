@@ -33,7 +33,6 @@ func NewUserService(repo dbrepo.Repository, cfg *config.Config) Port {
 }
 
 func (s *userService) GetUserByID(id string) (*domain.UserResponse, error) {
-	// Implementation for getting a user by ID
 	user, err := s.Repository.User().GetUserByID(id)
 	if err != nil {
 		return nil, err
@@ -42,7 +41,6 @@ func (s *userService) GetUserByID(id string) (*domain.UserResponse, error) {
 	return user, nil
 }
 func (s *userService) SearchUsers(user domain.User) ([]*domain.UserResponse, error) {
-	// Implementation for searching users
 	users, err := s.Repository.User().Search(user)
 	if err != nil {
 		return nil, err
@@ -52,7 +50,6 @@ func (s *userService) SearchUsers(user domain.User) ([]*domain.UserResponse, err
 }
 
 func (s *userService) SearchUsersForAuth(user domain.User) ([]*domain.User, error) {
-	// Implementation for searching users
 	users, err := s.Repository.User().SearchForAuth(user)
 	if err != nil {
 		return nil, err

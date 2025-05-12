@@ -2,8 +2,10 @@ package logger
 
 import (
 	"encoding/json"
+	"time"
 
 	cfgmd "github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/http/middlewares/config"
+	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/di"
 	"github.com/savsgio/atreugo/v11"
 	"github.com/sirupsen/logrus"
 )
@@ -20,7 +22,8 @@ func FromContext(ctx *atreugo.RequestCtx, name string) logrus.FieldLogger {
 	return logger.WithField("caller", name)
 }
 
-func Handler(ctx *atreugo.RequestCtx) error {
+func Handler(ctx *atreugo.RequestCtx, dep *di.Dependency) error {
+	start := time.Now()
 	logger := logrus.New()
 	cfg := cfgmd.FromContext(ctx)
 	level, err := logrus.ParseLevel(cfg.Log.Level)
@@ -30,14 +33,10 @@ func Handler(ctx *atreugo.RequestCtx) error {
 	}
 	logger.SetFormatter(&logrus.JSONFormatter{})
 	logger.SetLevel(level)
-
-	// add request data
-
 	entry := logger.WithFields(logrus.Fields{
-		"method": ctx.Method(),
-		"path":   ctx.Path()})
+		"method": string(ctx.Method()),
+		"path":   string(ctx.Path())})
 
-	// add request payload
 	body := ctx.RequestCtx.Request.Body()
 	if len(body) > 0 {
 		var reqBody = make(map[string]interface{})
@@ -49,6 +48,17 @@ func Handler(ctx *atreugo.RequestCtx) error {
 		ctx.SetUserValue("body", body)
 	}
 
-	ctx.RequestCtx.SetUserValue(&loggerKey{}, entry)
-	return ctx.Next()
+	dep.Logger = entry
+	err = ctx.Next()
+
+	// Log execution time
+	duration := time.Since(start)
+	entry = entry.WithField("duration", duration.String())
+	if err != nil {
+		entry.WithError(err).Error("request failed")
+	} else {
+		entry.Info("request completed")
+	}
+
+	return err
 }
