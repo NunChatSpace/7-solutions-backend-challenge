@@ -12,6 +12,6 @@ type UpdateUserRequest struct {
 }
 
 type QueryUsersRequest struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	Name  *string `json:"name"`
+	Email *string `json:"email"`
 }

@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/database"
@@ -10,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -24,23 +26,37 @@ type UserRepository struct {
 }
 
 func NewUserRepository(db *mongo.Database) database.IUserRepository {
-	return &UserRepository{db}
+	repo := UserRepository{db: db}
+	if err := repo.initIndexes(); err != nil {
+		log.Fatal("could not create indexes:", err)
+	}
+	return &repo
+}
+
+func (u *UserRepository) initIndexes() error {
+	collection := u.db.Collection(MONGO_USER_COLLECTION)
+
+	indexModel := mongo.IndexModel{
+		Keys: bson.D{{Key: "email", Value: 1}},
+		Options: options.Index().
+			SetUnique(true).
+			SetPartialFilterExpression(bson.M{
+				"deleted_at": bson.M{"$eq": nil},
+			}),
+	}
+
+	_, err := collection.Indexes().CreateOne(context.Background(), indexModel)
+	if err != nil {
+		return fmt.Errorf("could not create partial unique index: %w", err)
+	}
+	return nil
 }
 
 func (u *UserRepository) InsertUser(user *domain.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	// 1. Check if the email already exists
-	filter := bson.M{"email": user.Email}
-	count, err := u.db.Collection(MONGO_USER_COLLECTION).CountDocuments(ctx, filter)
-	if err != nil {
-		return fmt.Errorf("failed to check for existing email: %w", err)
-	}
-	if count > 0 {
-		return fmt.Errorf("email already exists")
-	}
 
-	// 2. Hash the password
+	// 1. Hash the password
 	if user.Password != nil {
 		hashed, err := bcrypt.GenerateFromPassword([]byte(*user.Password), bcrypt.DefaultCost)
 		if err != nil {
@@ -50,18 +66,34 @@ func (u *UserRepository) InsertUser(user *domain.User) error {
 		user.Password = &hashedStr
 	}
 
-	// Just for authorization testing purposes
-	// In a real application, you would not set scopes like this
-	// and would instead use a proper authorization system
-	// and set scopes based on user roles or permissions
-	// This is just a placeholder for the sake of example
+	// 2. Set placeholder scopes
 	scope := map[string]interface{}{
 		"users": 15,
 	}
 	user.Scopes = &scope
+
+	// 3. Insert into MongoDB
+	now := time.Now()
+	user.CreatedAt = &now
+
 	res, err := u.db.Collection(MONGO_USER_COLLECTION).InsertOne(ctx, user)
-	fmt.Println("Inserted user with ID:", res.InsertedID)
-	return err
+	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			return fmt.Errorf("error: %s was used", *user.Email)
+		}
+		return fmt.Errorf("failed to insert user: %w", err)
+	}
+
+	// ✅ 4. Assign inserted ID back to user.ID
+	if oid, ok := res.InsertedID.(primitive.ObjectID); ok {
+		idStr := oid.Hex()
+		user.ID = &idStr
+	} else {
+		return fmt.Errorf("inserted ID is not an ObjectID")
+	}
+
+	fmt.Println("Inserted user with ID:", user.ID)
+	return nil
 }
 
 func (u *UserRepository) GetUserByID(id string) (*domain.UserResponse, error) {
@@ -158,46 +190,57 @@ func (u *UserRepository) SearchForAuth(user domain.User) ([]*domain.User, error)
 	return users, nil
 }
 
-func (u *UserRepository) UpdateUser(user *domain.User) (*domain.User, error) {
+func (u *UserRepository) UpdateUser(user *domain.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
-	filter := bson.M{"id": user.ID, "deleted_at": bson.M{"$eq": nil}}
-	update := bson.M{
-		"$set": bson.M{
-			"email":    user.Email,
-			"password": user.Password,
-		},
+	oid, err := primitive.ObjectIDFromHex(*user.ID)
+	if err != nil {
+		return fmt.Errorf("invalid ObjectID: %w", err)
 	}
 
+	filter := bson.M{"_id": oid, "deleted_at": bson.M{"$eq": nil}}
+	update := bson.M{
+		"$set": bson.M{
+			"email": user.Email,
+			"name":  user.Name,
+		},
+	}
+	now := time.Now()
+	user.UpdatedAt = &now
 	res, err := u.db.Collection(MONGO_USER_COLLECTION).UpdateOne(ctx, filter, update)
 	if err != nil {
-		return user, err
+		return err
 	}
 
 	if res.MatchedCount == 0 {
-		return user, fmt.Errorf("user not found")
+		return fmt.Errorf("user not found")
 	}
 
-	return user, nil
+	var updatedUser domain.User
+	err = u.db.Collection(MONGO_USER_COLLECTION).FindOne(ctx, filter).Decode(&updatedUser)
+	if err != nil {
+		return fmt.Errorf("failed to fetch updated user: %w", err)
+	}
+	user = &updatedUser
+
+	return nil
 }
 
 func (u *UserRepository) DeleteUser(id string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	filter := bson.M{"id": id, "deleted_at": bson.M{"$eq": nil}}
-	update := bson.M{"$set": bson.M{"deleted_at": time.Now()}}
-	user, err := u.GetUserByID(id)
+	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return err
-	}
-	if user == nil {
-		return fmt.Errorf("delete fail: user not found")
+		return fmt.Errorf("invalid ObjectID: %w", err)
 	}
 
+	filter := bson.M{"_id": oid, "deleted_at": bson.M{"$eq": nil}}
+	update := bson.M{"$set": bson.M{"deleted_at": time.Now()}}
+
+	// You might not even need this GetUserByID call unless you want to validate or log
 	if _, err := u.db.Collection(MONGO_USER_COLLECTION).UpdateOne(ctx, filter, update); err != nil {
-		return err
+		return fmt.Errorf("failed to update deleted_at: %w", err)
 	}
 
 	return nil

@@ -6,6 +6,7 @@ import (
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/domain"
 	"github.com/go-playground/validator/v10"
 	"github.com/savsgio/atreugo/v11"
+	"github.com/valyala/fasthttp"
 )
 
 // InitRoutes initializes API routes
@@ -15,11 +16,10 @@ func InitRoutes(router *atreugo.Router, deps *di.Dependency) {
 		if err != nil {
 			return rc.ErrorResponse(err)
 		}
-
 		userService := deps.Services.User()
 		users, err := userService.SearchUsers(domain.User{
-			Name:  &queryParams.Name,
-			Email: &queryParams.Email,
+			Name:  queryParams.Name,
+			Email: queryParams.Email,
 		})
 		if err != nil {
 			return rc.ErrorResponse(err)
@@ -31,13 +31,12 @@ func InitRoutes(router *atreugo.Router, deps *di.Dependency) {
 	router.GET("/users/{id}", func(rc *atreugo.RequestCtx) error {
 		params := common.GetParams(rc, []string{"id"})
 		userService := deps.Services.User()
-		users, err := userService.GetUserByID(params["id"])
-
+		user, err := userService.GetUserByID(params["id"])
 		if err != nil {
 			return rc.ErrorResponse(err)
 		}
 
-		return rc.JSONResponse(users)
+		return rc.JSONResponse(user)
 
 	})
 
@@ -52,15 +51,16 @@ func InitRoutes(router *atreugo.Router, deps *di.Dependency) {
 			return rc.ErrorResponse(err)
 		}
 		userService := deps.Services.User()
-		if err := userService.CreateUser(&domain.User{
+		user := domain.User{
 			Name:     &reqBody.Name,
 			Email:    &reqBody.Email,
 			Password: &reqBody.Password,
-		}); err != nil {
+		}
+		if err := userService.CreateUser(&user); err != nil {
 			return rc.ErrorResponse(err)
 		}
 
-		return rc.RawResponse("user created", 200)
+		return rc.JSONResponse(user.ToUserResponse(), fasthttp.StatusCreated)
 	})
 	router.PATCH("/users/{id}", func(rc *atreugo.RequestCtx) error {
 		body, err := common.BindBodyToStruct[UpdateUserRequest](rc)
@@ -69,15 +69,15 @@ func InitRoutes(router *atreugo.Router, deps *di.Dependency) {
 		}
 		params := common.GetParams(rc, []string{"id"})
 		userService := deps.Services.User()
-		res, err := userService.UpdateUser(params["id"], &domain.User{
+		user := domain.User{
 			Name:  &body.Name,
 			Email: &body.Email,
-		})
-		if err != nil {
+		}
+		if err := userService.UpdateUser(params["id"], &user); err != nil {
 			return rc.ErrorResponse(err)
 		}
 
-		return rc.JSONResponse(*res)
+		return rc.JSONResponse(user.ToUserResponse())
 	})
 
 	router.DELETE("/users/{id}", func(rc *atreugo.RequestCtx) error {

@@ -22,11 +22,11 @@ func NewSessionServiceServer(deps *di.Dependency) sessionpb.SessionServiceServer
 func (s *sessionServiceServer) Login(ctx context.Context, req *sessionpb.LoginRequest) (*sessionpb.LoginResponse, error) {
 	userService := s.Dependencies.Services.User()
 	sessionService := s.Dependencies.Services.Session()
-	user, err := userService.Authenticate(&domain.User{
+	user := domain.User{
 		Email:    &req.Email,
 		Password: &req.Password,
-	})
-	if err != nil {
+	}
+	if err := userService.Authenticate(&user); err != nil {
 		return nil, err
 	}
 	session, err := sessionService.CreateSession(*user.ID)

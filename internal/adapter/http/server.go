@@ -10,6 +10,8 @@ import (
 
 func NewServer(deps *di.Dependency, cfg atreugo.Config) *atreugo.Atreugo {
 	server := atreugo.New(cfg)
+	server.Static("/docs", "./static/swagger-ui")
+
 	server.UseBefore(func(ctx *atreugo.RequestCtx) error {
 		ctx.Response.Header.Set("Access-Control-Allow-Origin", "*")
 		ctx.Response.Header.Set("Access-Control-Allow-Headers", "Content-Type, X-Custom")

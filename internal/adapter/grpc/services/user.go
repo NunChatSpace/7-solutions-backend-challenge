@@ -33,8 +33,8 @@ func (s *userServiceServer) CreateUser(ctx context.Context, req *userpb.CreateUs
 			Id:        common.SafeString(user.ID),
 			Name:      common.SafeString(user.Name),
 			Email:     common.SafeString(user.Email),
-			CreatedAt: common.SafeString(user.CreatedAt),
-			UpdatedAt: common.SafeString(user.UpdatedAt),
+			CreatedAt: common.SafeTime(user.CreatedAt),
+			UpdatedAt: common.SafeTime(user.UpdatedAt),
 			Scopes:    s.convertScopes(common.SafeMap(user.Scopes)),
 		},
 	}, nil
@@ -52,8 +52,8 @@ func (s *userServiceServer) GetUser(ctx context.Context, req *userpb.GetUserRequ
 			Id:        common.SafeString(user.ID),
 			Name:      common.SafeString(user.Name),
 			Email:     common.SafeString(user.Email),
-			CreatedAt: common.SafeString(user.CreatedAt),
-			UpdatedAt: common.SafeString(user.UpdatedAt),
+			CreatedAt: common.SafeTime(user.CreatedAt),
+			UpdatedAt: common.SafeTime(user.UpdatedAt),
 			Scopes:    s.convertScopes(common.SafeMap(user.Scopes)),
 		},
 	}, nil

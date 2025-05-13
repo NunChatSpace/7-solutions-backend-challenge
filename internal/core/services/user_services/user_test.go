@@ -253,21 +253,21 @@ func TestUpdateUser(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := userService.UpdateUser(tt.userID, tt.user)
+			err := userService.UpdateUser(tt.userID, tt.user)
 			if tt.err != nil && err == nil {
 				t.Errorf("expected error %v, got nil", tt.err)
 			}
 			if tt.err == nil && err != nil {
 				t.Errorf("expected no error, got %v", err)
 			}
-			if result != nil && *result.ID != *tt.expected.ID {
-				t.Errorf("expected user ID %d, got %s", *tt.expected.ID, *result.ID)
+			if tt.user != nil && *tt.user.ID != *tt.expected.ID {
+				t.Errorf("expected user ID %s, got %s", *tt.expected.ID, *tt.user.ID)
 			}
-			if result != nil && *result.Name != *tt.expected.Name {
-				t.Errorf("expected user Name %s, got %s", *tt.expected.Name, *result.Name)
+			if tt.user != nil && *tt.user.Name != *tt.expected.Name {
+				t.Errorf("expected user Name %s, got %s", *tt.expected.Name, *tt.user.Name)
 			}
-			if result != nil && *result.Email != *tt.expected.Email {
-				t.Errorf("expected user Email %s, got %s", *tt.expected.Email, *result.Email)
+			if tt.user != nil && *tt.user.Email != *tt.expected.Email {
+				t.Errorf("expected user Email %s, got %s", *tt.expected.Email, *tt.user.Email)
 			}
 		})
 	}

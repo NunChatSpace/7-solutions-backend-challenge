@@ -29,7 +29,6 @@ func main() {
 
 	server := http.NewServer(deps, appConfig)
 	grpcServer := grpc.NewGRPCServer(deps)
-
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
 

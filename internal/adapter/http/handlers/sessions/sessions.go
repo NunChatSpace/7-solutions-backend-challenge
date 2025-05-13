@@ -20,11 +20,11 @@ func InitRoutes(router *atreugo.Router, deps *di.Dependency) {
 
 		userService := deps.Services.User()
 		sessionService := deps.Services.Session()
-		user, err := userService.Authenticate(&domain.User{
+		user := domain.User{
 			Email:    &body.Email,
 			Password: &body.Password,
-		})
-		if err != nil {
+		}
+		if err := userService.Authenticate(&user); err != nil {
 			return rc.ErrorResponse(err)
 		}
 		session, err := sessionService.CreateSession(*user.ID)
