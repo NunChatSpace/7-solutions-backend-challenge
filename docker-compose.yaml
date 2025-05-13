@@ -1,6 +1,17 @@
 version: "3.8"
 
 services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: myapp
+        ports:
+            - "8888:8888"
+        environment:
+            - DATABASE__MONGODB__HOST=mongo
+        depends_on:
+            - mongo
     mongo:
         image: mongo:6.0
         container_name: mongodb
