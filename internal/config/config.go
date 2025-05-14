@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/jinzhu/configor"
@@ -63,7 +62,6 @@ func LoadConfig() (*Config, error) {
 		log.Fatal("Error loading config")
 	}
 
-	fmt.Println("config.App.Env", config.App.Env)
 	if config.App.Env == "test" {
 		config.Database.MongoDB.DatabaseName = "_test"
 	}

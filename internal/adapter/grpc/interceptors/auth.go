@@ -2,9 +2,9 @@ package interceptors
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
+	authservices "github.com/NunChatSpace/7-solutions-backend-challenge/internal/core/services/auth_services"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/di"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -24,7 +24,6 @@ func AuthInterceptor(deps *di.Dependency) grpc.UnaryServerInterceptor {
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (interface{}, error) {
-		fmt.Println("AuthInterceptor: ", info.FullMethod)
 		if skipAuth[info.FullMethod] {
 			// Skip auth check
 			return handler(ctx, req)
@@ -41,7 +40,8 @@ func AuthInterceptor(deps *di.Dependency) grpc.UnaryServerInterceptor {
 		}
 
 		tokenStr := strings.TrimPrefix(authHeader[0], "Bearer ")
-		if _, err := deps.Services.Auth().DecodeToken(tokenStr); err != nil {
+		authService := di.Get[authservices.IAuthSerivce](deps)
+		if _, err := authService.DecodeToken(tokenStr); err != nil {
 			return nil, status.Error(codes.Unauthenticated, "invalid token")
 		}
 

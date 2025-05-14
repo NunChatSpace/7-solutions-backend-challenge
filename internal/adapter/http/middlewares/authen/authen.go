@@ -4,6 +4,8 @@ import (
 	"errors"
 	"strings"
 
+	authservices "github.com/NunChatSpace/7-solutions-backend-challenge/internal/core/services/auth_services"
+	userservices "github.com/NunChatSpace/7-solutions-backend-challenge/internal/core/services/user_services"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/di"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/domain"
 	"github.com/savsgio/atreugo/v11"
@@ -31,7 +33,7 @@ func FromContext(ctx *atreugo.RequestCtx) *domain.User {
 	return user
 }
 
-func Handler(ctx *atreugo.RequestCtx, dep *di.Dependency) error {
+func Handler(ctx *atreugo.RequestCtx, deps *di.Dependency) error {
 	fullPath := string(ctx.Request.URI().Path())
 	httpMethod := string(ctx.Request.Header.Method())
 	if !isReqiredAuth(fullPath, string(httpMethod)) {
@@ -46,12 +48,14 @@ func Handler(ctx *atreugo.RequestCtx, dep *di.Dependency) error {
 	if tokenStr == "" {
 		return errors.New("invalid token")
 	}
-	tokenInfo, err := dep.Services.Auth().DecodeToken(tokenStr)
+	authService := di.Get[authservices.IAuthSerivce](deps)
+	tokenInfo, err := authService.DecodeToken(tokenStr)
 	if err != nil {
 		return ctx.ErrorResponse(err)
 	}
 
-	user, err := dep.Services.User().GetUserByID(tokenInfo.UserID)
+	userService := di.Get[userservices.IUserService](deps)
+	user, err := userService.GetUserByID(tokenInfo.UserID)
 	if err != nil {
 		return ctx.ErrorResponse(err)
 	}
@@ -82,14 +86,15 @@ func Handler(ctx *atreugo.RequestCtx, dep *di.Dependency) error {
 		return errors.New("user does not have permission to access this resource")
 	}
 
-	dep.Actor = &domain.User{
+	di.Provide(deps, domain.User{
 		ID:        user.ID,
 		Name:      user.Name,
 		Email:     user.Email,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 		Scopes:    user.Scopes,
-	}
+	})
+
 	return ctx.Next()
 }
 

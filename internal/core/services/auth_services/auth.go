@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	dbrepo "github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/database"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/config"
+	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/di"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/domain"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type Port interface {
+type IAuthSerivce interface {
 	GenerateTokens(tokenInfo domain.TokenInfo) (string, string, error)
 	GenerateRefreshToken(tokenInfo domain.TokenInfo) (string, error)
 	ValidateRefreshToken(domain.TokenInfo) error
@@ -20,22 +20,21 @@ type Port interface {
 
 	DecodeToken(token string) (*domain.TokenInfo, error)
 	EncodeToken(tokenInfo domain.TokenInfo) (string, error)
-
-	IsPermit(tokenStr string) (*domain.User, error)
 }
 
 type authService struct {
-	Repository dbrepo.Repository
-	Config     *config.Config
+	Dependencies *di.Dependency
+
+	cfg *config.Config
 }
 
-func NewAuthService(repo dbrepo.Repository, cfg *config.Config) Port {
-	return &authService{
-		Repository: repo,
-		Config:     cfg,
+func NewAuthService(deps *di.Dependency) IAuthSerivce {
+	return authService{
+		Dependencies: deps,
+		cfg:          di.Get[*config.Config](deps),
 	}
 }
-func (s *authService) GenerateTokens(tokenInfo domain.TokenInfo) (string, string, error) {
+func (s authService) GenerateTokens(tokenInfo domain.TokenInfo) (string, string, error) {
 	// Implementation for generating access and refresh tokens
 	// This is a placeholder implementation
 	tokenInfo.Type = "access_token"
@@ -51,31 +50,30 @@ func (s *authService) GenerateTokens(tokenInfo domain.TokenInfo) (string, string
 	return accessToken, refreshToken, nil
 }
 
-func (s *authService) GenerateRefreshToken(tokenInfo domain.TokenInfo) (string, error) {
+func (s authService) GenerateRefreshToken(tokenInfo domain.TokenInfo) (string, error) {
 	return s.EncodeToken(tokenInfo)
 }
-func (s *authService) ValidateRefreshToken(tokenInfo domain.TokenInfo) error {
+func (s authService) ValidateRefreshToken(tokenInfo domain.TokenInfo) error {
 	return s.validateToken(tokenInfo, "refresh_token")
 }
-func (s *authService) GenerateAccessToken(tokenInfo domain.TokenInfo) (string, error) {
+func (s authService) GenerateAccessToken(tokenInfo domain.TokenInfo) (string, error) {
 	token, err := s.EncodeToken(tokenInfo)
 	return token, err
 }
-func (s *authService) ValidateAccessToken(tokenInfo domain.TokenInfo) error {
+func (s authService) ValidateAccessToken(tokenInfo domain.TokenInfo) error {
 	return s.validateToken(tokenInfo, "access_token")
 }
 
-func (s *authService) DecodeToken(tokenStr string) (*domain.TokenInfo, error) {
+func (s authService) DecodeToken(tokenStr string) (*domain.TokenInfo, error) {
 	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
 		// Validate the algorithm
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
 
-		return []byte(s.Config.JWT.SecretKey), nil
+		return []byte(s.cfg.JWT.SecretKey), nil
 	})
 	if err != nil {
-		fmt.Println("Error parsing token:", err)
 		return nil, err
 	}
 
@@ -84,24 +82,33 @@ func (s *authService) DecodeToken(tokenStr string) (*domain.TokenInfo, error) {
 	if !ok || !token.Valid {
 		return nil, errors.New("invalid token")
 	}
-	fmt.Printf("Claims: %v\n", claims)
 
 	tokenInfo := domain.TokenInfo{}
 	tokenInfo.FromJWTClaims(claims)
-	if err := s.ValidateAccessToken(tokenInfo); err != nil {
-		return nil, err
+	if tokenInfo.Type == "access_token" {
+		if err := s.ValidateAccessToken(tokenInfo); err != nil {
+			return nil, err
+		}
+	} else if tokenInfo.Type == "refresh_token" {
+		if err := s.ValidateRefreshToken(tokenInfo); err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, fmt.Errorf("unexpected token type: %v", tokenInfo.Type)
 	}
 
 	return &tokenInfo, nil
 }
 
-func (s *authService) EncodeToken(tokenInfo domain.TokenInfo) (string, error) {
-	tokenInfo.Expired = time.Now().Add(24 * time.Hour)
+func (s authService) EncodeToken(tokenInfo domain.TokenInfo) (string, error) {
+	if tokenInfo.Expired.IsZero() {
+		tokenInfo.Expired = time.Now().Add(24 * time.Hour)
+	}
 	claims := tokenInfo.ToJWTClaims()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	// Sign the token with secret key
-	signedToken, err := token.SignedString([]byte(s.Config.JWT.SecretKey))
+	signedToken, err := token.SignedString([]byte(s.cfg.JWT.SecretKey))
 	if err != nil {
 		return "", err
 	}
@@ -109,7 +116,7 @@ func (s *authService) EncodeToken(tokenInfo domain.TokenInfo) (string, error) {
 	return signedToken, nil
 }
 
-func (s *authService) validateToken(tokenInfo domain.TokenInfo, kind string) error {
+func (s authService) validateToken(tokenInfo domain.TokenInfo, kind string) error {
 	// Check type
 	if tokenInfo.Type != kind {
 		return fmt.Errorf("unexpected token type: %v", tokenInfo.Type)
@@ -121,44 +128,4 @@ func (s *authService) validateToken(tokenInfo domain.TokenInfo, kind string) err
 	}
 
 	return nil
-}
-
-func (s *authService) IsPermit(tokenStr string) (*domain.User, error) {
-
-	// tokenInfo, err := dep.Services.Auth().DecodeToken(tokenStr)
-	// if err != nil {
-	// 	return ctx.ErrorResponse(err)
-	// }
-
-	// user, err := dep.Services.User().GetUserByID(tokenInfo.UserID)
-	// if err != nil {
-	// 	return ctx.ErrorResponse(err)
-	// }
-
-	// parts := strings.Split(fullPath, "/")
-	// if len(parts) < 4 {
-	// 	return errors.New("invalid path")
-	// }
-	// // "/api/v1/users" → ["", "api", "v1", "users"]
-	// rootPath := parts[3]
-	// methodNumber := 0
-	// if string(ctx.Request.Header.Method()) == "POST" {
-	// 	methodNumber = 1
-	// } else if string(ctx.Request.Header.Method()) == "GET" {
-	// 	methodNumber = 2
-	// } else if string(ctx.Request.Header.Method()) == "PATCH" {
-	// 	methodNumber = 3
-	// } else if string(ctx.Request.Header.Method()) == "DELETE" {
-	// 	methodNumber = 4
-	// } else if string(ctx.Request.Header.Method()) == "OPTIONS" {
-	// 	methodNumber = 0
-	// } else {
-	// 	return errors.New("invalid method")
-	// }
-
-	// userScope := (*user.Scopes)[rootPath]
-	// if methodNumber > 0 && methodNumber&userScope == 0 {
-	// 	return errors.New("user does not have permission to access this resource")
-	// }
-	return nil, nil
 }

@@ -1,11 +1,13 @@
 package sessions
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/http/middlewares/logger"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/common"
+	authservices "github.com/NunChatSpace/7-solutions-backend-challenge/internal/core/services/auth_services"
+	sessionservices "github.com/NunChatSpace/7-solutions-backend-challenge/internal/core/services/session_services"
+	userservices "github.com/NunChatSpace/7-solutions-backend-challenge/internal/core/services/user_services"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/di"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/domain"
 	"github.com/savsgio/atreugo/v11"
@@ -18,8 +20,8 @@ func InitRoutes(router *atreugo.Router, deps *di.Dependency) {
 			return rc.ErrorResponse(err)
 		}
 
-		userService := deps.Services.User()
-		sessionService := deps.Services.Session()
+		userService := di.Get[userservices.IUserService](deps)
+		sessionService := di.Get[sessionservices.ISessionService](deps)
 		user := domain.User{
 			Email:    &body.Email,
 			Password: &body.Password,
@@ -41,7 +43,7 @@ func InitRoutes(router *atreugo.Router, deps *di.Dependency) {
 			return rc.ErrorResponse(err)
 		}
 
-		authService := deps.Services.Auth()
+		authService := di.Get[authservices.IAuthSerivce](deps)
 		token, err := authService.DecodeToken(body.RefreshToken)
 		if err != nil {
 			return rc.ErrorResponse(err)
@@ -75,9 +77,8 @@ func InitRoutes(router *atreugo.Router, deps *di.Dependency) {
 		}
 
 		token := parts[1]
-		fmt.Println("Access token:", token)
-		sessionService := deps.Services.Session()
-		authService := deps.Services.Auth()
+		sessionService := di.Get[sessionservices.ISessionService](deps)
+		authService := di.Get[authservices.IAuthSerivce](deps)
 		tokenInfo, _ := authService.DecodeToken(token)
 		sessionService.TerminateSession(tokenInfo.SessionID)
 

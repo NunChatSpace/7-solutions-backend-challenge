@@ -1,0 +1,534 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>users: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/http/handlers/users/users.go (79.5%)</option>
+				
+				<option value="file1">github.com/NunChatSpace/7-solutions-backend-challenge/internal/core/services/auth_services/auth.go (82.7%)</option>
+				
+				<option value="file2">github.com/NunChatSpace/7-solutions-backend-challenge/internal/core/services/session_services/session.go (100.0%)</option>
+				
+				<option value="file3">github.com/NunChatSpace/7-solutions-backend-challenge/internal/core/services/user_services/user.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package users
+
+import (
+        "github.com/NunChatSpace/7-solutions-backend-challenge/internal/common"
+        userservices "github.com/NunChatSpace/7-solutions-backend-challenge/internal/core/services/user_services"
+        "github.com/NunChatSpace/7-solutions-backend-challenge/internal/di"
+        "github.com/NunChatSpace/7-solutions-backend-challenge/internal/domain"
+        "github.com/go-playground/validator/v10"
+        "github.com/savsgio/atreugo/v11"
+        "github.com/valyala/fasthttp"
+)
+
+// InitRoutes initializes API routes
+func InitRoutes(router *atreugo.Router, deps *di.Dependency) <span class="cov8" title="1">{
+        router.GET("/users", func(rc *atreugo.RequestCtx) error </span><span class="cov8" title="1">{
+                queryParams, err := common.BindQueryToStruct[QueryUsersRequest](rc)
+                if err != nil </span><span class="cov0" title="0">{
+                        return rc.ErrorResponse(err)
+                }</span>
+                <span class="cov8" title="1">userService := di.Get[userservices.IUserService](deps)
+                users, err := userService.SearchUsers(domain.User{
+                        Name:  queryParams.Name,
+                        Email: queryParams.Email,
+                })
+                if err != nil </span><span class="cov0" title="0">{
+                        return rc.ErrorResponse(err)
+                }</span>
+
+                <span class="cov8" title="1">return rc.JSONResponse(users)</span>
+        })
+
+        <span class="cov8" title="1">router.GET("/users/{id}", func(rc *atreugo.RequestCtx) error </span><span class="cov8" title="1">{
+                params := common.GetParams(rc, []string{"id"})
+                userService := di.Get[userservices.IUserService](deps)
+                user, err := userService.GetUserByID(params["id"])
+                if err != nil </span><span class="cov0" title="0">{
+                        return rc.ErrorResponse(err)
+                }</span>
+
+                <span class="cov8" title="1">return rc.JSONResponse(user)</span>
+
+        })
+
+        <span class="cov8" title="1">router.POST("/users", func(rc *atreugo.RequestCtx) error </span><span class="cov8" title="1">{
+                reqBody, err := common.BindBodyToStruct[CreateUserRequest](rc)
+                if err != nil </span><span class="cov0" title="0">{
+                        return rc.ErrorResponse(err)
+                }</span>
+
+                <span class="cov8" title="1">validate := validator.New()
+                if err := validate.Struct(reqBody); err != nil </span><span class="cov0" title="0">{
+                        return rc.ErrorResponse(err)
+                }</span>
+                <span class="cov8" title="1">userService := di.Get[userservices.IUserService](deps)
+                user := domain.User{
+                        Name:     &amp;reqBody.Name,
+                        Email:    &amp;reqBody.Email,
+                        Password: &amp;reqBody.Password,
+                }
+                if err := userService.CreateUser(&amp;user); err != nil </span><span class="cov0" title="0">{
+                        return rc.ErrorResponse(err)
+                }</span>
+
+                <span class="cov8" title="1">return rc.JSONResponse(user.ToUserResponse(), fasthttp.StatusCreated)</span>
+        })
+        <span class="cov8" title="1">router.PATCH("/users/{id}", func(rc *atreugo.RequestCtx) error </span><span class="cov8" title="1">{
+                body, err := common.BindBodyToStruct[UpdateUserRequest](rc)
+                if err != nil </span><span class="cov0" title="0">{
+                        return rc.ErrorResponse(err)
+                }</span>
+                <span class="cov8" title="1">params := common.GetParams(rc, []string{"id"})
+                userService := di.Get[userservices.IUserService](deps)
+                user := domain.User{
+                        Name:  &amp;body.Name,
+                        Email: &amp;body.Email,
+                }
+                if err := userService.UpdateUser(params["id"], &amp;user); err != nil </span><span class="cov0" title="0">{
+                        return rc.ErrorResponse(err)
+                }</span>
+
+                <span class="cov8" title="1">return rc.JSONResponse(user.ToUserResponse())</span>
+        })
+
+        <span class="cov8" title="1">router.DELETE("/users/{id}", func(rc *atreugo.RequestCtx) error </span><span class="cov8" title="1">{
+                params := common.GetParams(rc, []string{"id"})
+
+                userService := di.Get[userservices.IUserService](deps)
+                if err := userService.DeleteUser(params["id"]); err != nil </span><span class="cov0" title="0">{
+                        return rc.ErrorResponse(err)
+                }</span>
+                <span class="cov8" title="1">return rc.RawResponse("deleted", 200)</span>
+        })
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package authservices
+
+import (
+        "errors"
+        "fmt"
+        "time"
+
+        "github.com/NunChatSpace/7-solutions-backend-challenge/internal/config"
+        "github.com/NunChatSpace/7-solutions-backend-challenge/internal/di"
+        "github.com/NunChatSpace/7-solutions-backend-challenge/internal/domain"
+        "github.com/golang-jwt/jwt/v5"
+)
+
+type IAuthSerivce interface {
+        GenerateTokens(tokenInfo domain.TokenInfo) (string, string, error)
+        GenerateRefreshToken(tokenInfo domain.TokenInfo) (string, error)
+        ValidateRefreshToken(domain.TokenInfo) error
+        GenerateAccessToken(tokenInfo domain.TokenInfo) (string, error)
+        ValidateAccessToken(domain.TokenInfo) error
+
+        DecodeToken(token string) (*domain.TokenInfo, error)
+        EncodeToken(tokenInfo domain.TokenInfo) (string, error)
+}
+
+type authService struct {
+        Dependencies *di.Dependency
+
+        cfg *config.Config
+}
+
+func NewAuthService(deps *di.Dependency) IAuthSerivce <span class="cov8" title="1">{
+        return authService{
+                Dependencies: deps,
+                cfg:          di.Get[*config.Config](deps),
+        }
+}</span>
+func (s authService) GenerateTokens(tokenInfo domain.TokenInfo) (string, string, error) <span class="cov8" title="1">{
+        // Implementation for generating access and refresh tokens
+        // This is a placeholder implementation
+        tokenInfo.Type = "access_token"
+        accessToken, err := s.GenerateAccessToken(tokenInfo)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", "", err
+        }</span>
+        <span class="cov8" title="1">tokenInfo.Type = "refresh_token"
+        refreshToken, err := s.GenerateRefreshToken(tokenInfo)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", "", err
+        }</span>
+        <span class="cov8" title="1">return accessToken, refreshToken, nil</span>
+}
+
+func (s authService) GenerateRefreshToken(tokenInfo domain.TokenInfo) (string, error) <span class="cov8" title="1">{
+        return s.EncodeToken(tokenInfo)
+}</span>
+func (s authService) ValidateRefreshToken(tokenInfo domain.TokenInfo) error <span class="cov8" title="1">{
+        return s.validateToken(tokenInfo, "refresh_token")
+}</span>
+func (s authService) GenerateAccessToken(tokenInfo domain.TokenInfo) (string, error) <span class="cov8" title="1">{
+        token, err := s.EncodeToken(tokenInfo)
+        return token, err
+}</span>
+func (s authService) ValidateAccessToken(tokenInfo domain.TokenInfo) error <span class="cov8" title="1">{
+        return s.validateToken(tokenInfo, "access_token")
+}</span>
+
+func (s authService) DecodeToken(tokenStr string) (*domain.TokenInfo, error) <span class="cov8" title="1">{
+        token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) </span><span class="cov8" title="1">{
+                // Validate the algorithm
+                if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+                }</span>
+
+                <span class="cov8" title="1">return []byte(s.cfg.JWT.SecretKey), nil</span>
+        })
+        <span class="cov8" title="1">if err != nil </span><span class="cov8" title="1">{
+                fmt.Println("Error parsing token:", err)
+                return nil, err
+        }</span>
+
+        // Extract and return claims
+        <span class="cov8" title="1">claims, ok := token.Claims.(jwt.MapClaims)
+        if !ok || !token.Valid </span><span class="cov0" title="0">{
+                return nil, errors.New("invalid token")
+        }</span>
+
+        <span class="cov8" title="1">tokenInfo := domain.TokenInfo{}
+        tokenInfo.FromJWTClaims(claims)
+        if tokenInfo.Type == "access_token" </span><span class="cov8" title="1">{
+                if err := s.ValidateAccessToken(tokenInfo); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+        } else<span class="cov8" title="1"> if tokenInfo.Type == "refresh_token" </span><span class="cov8" title="1">{
+                if err := s.ValidateRefreshToken(tokenInfo); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+        } else<span class="cov8" title="1"> {
+                return nil, fmt.Errorf("unexpected token type: %v", tokenInfo.Type)
+        }</span>
+
+        <span class="cov8" title="1">return &amp;tokenInfo, nil</span>
+}
+
+func (s authService) EncodeToken(tokenInfo domain.TokenInfo) (string, error) <span class="cov8" title="1">{
+        if tokenInfo.Expired.IsZero() </span><span class="cov8" title="1">{
+                tokenInfo.Expired = time.Now().Add(24 * time.Hour)
+        }</span>
+        <span class="cov8" title="1">claims := tokenInfo.ToJWTClaims()
+        token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+        // Sign the token with secret key
+        signedToken, err := token.SignedString([]byte(s.cfg.JWT.SecretKey))
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+
+        <span class="cov8" title="1">return signedToken, nil</span>
+}
+
+func (s authService) validateToken(tokenInfo domain.TokenInfo, kind string) error <span class="cov8" title="1">{
+        // Check type
+        if tokenInfo.Type != kind </span><span class="cov0" title="0">{
+                return fmt.Errorf("unexpected token type: %v", tokenInfo.Type)
+        }</span>
+
+        // Check expiry
+        <span class="cov8" title="1">now := time.Now()
+        layout := "2006-01-02 15:04:05"
+
+        fmt.Printf("Token expiry: %s\n", tokenInfo.Expired.Format(layout))
+        fmt.Printf("Current time: %s\n", now.Format(layout))
+        if tokenInfo.Expired.Before(time.Now()) </span><span class="cov0" title="0">{
+                return errors.New("token is expired")
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package sessionservices
+
+import (
+        "github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/database"
+        authservices "github.com/NunChatSpace/7-solutions-backend-challenge/internal/core/services/auth_services"
+        "github.com/NunChatSpace/7-solutions-backend-challenge/internal/di"
+        "github.com/NunChatSpace/7-solutions-backend-challenge/internal/domain"
+)
+
+type ISessionService interface {
+        CreateSession(userID string) (*domain.Tokens, error)
+        GetSessionByID(id string) (*domain.Session, error)
+        TerminateSession(id string) error
+}
+
+type sessionService struct {
+        Dependencies *di.Dependency
+
+        sessionRepo database.ISessionRepository
+        userRepo    database.IUserRepository
+        authservice authservices.IAuthSerivce
+}
+
+func NewSessionService(deps *di.Dependency) ISessionService <span class="cov8" title="1">{
+        return sessionService{
+                Dependencies: deps,
+                sessionRepo:  di.Get[database.ISessionRepository](deps),
+                userRepo:     di.Get[database.IUserRepository](deps),
+                authservice:  di.Get[authservices.IAuthSerivce](deps),
+        }
+}</span>
+
+func (s sessionService) CreateSession(userID string) (*domain.Tokens, error) <span class="cov8" title="1">{
+        session := &amp;domain.Session{
+                UserID: &amp;userID,
+        }
+        _session, err := s.sessionRepo.InsertSession(session)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">user, err := s.userRepo.GetUserByID(userID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">tokenInfo := domain.TokenInfo{
+                UserID:    userID,
+                SessionID: *_session.ID,
+                Scopes:    *user.Scopes,
+        }
+        accessToken, refreshToken, err := s.authservice.GenerateTokens(tokenInfo)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return &amp;domain.Tokens{
+                AccessToken:  accessToken,
+                RefreshToken: refreshToken,
+        }, nil</span>
+}
+
+func (s sessionService) GetSessionByID(id string) (*domain.Session, error) <span class="cov8" title="1">{
+        // Implementation for getting a session by ID
+        session, err := s.sessionRepo.GetSessionByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">return session, nil</span>
+}
+
+func (s sessionService) TerminateSession(id string) error <span class="cov8" title="1">{
+        // Implementation for terminating a session
+        if err := s.sessionRepo.TerminateSession(id); err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package userservices
+
+import (
+        "fmt"
+
+        "github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/database"
+        "github.com/NunChatSpace/7-solutions-backend-challenge/internal/di"
+        "github.com/NunChatSpace/7-solutions-backend-challenge/internal/domain"
+        "golang.org/x/crypto/bcrypt"
+)
+
+type IUserService interface {
+        GetUserByID(id string) (*domain.UserResponse, error)
+        SearchUsers(user domain.User) ([]*domain.UserResponse, error)
+        SearchUsersForAuth(user domain.User) ([]*domain.User, error)
+        CreateUser(user *domain.User) error
+        UpdateUser(id string, user *domain.User) error
+        DeleteUser(id string) error
+
+        Authenticate(user *domain.User) error
+}
+
+type userService struct {
+        Dependencies *di.Dependency
+
+        userRepo database.IUserRepository
+}
+
+func NewUserService(deps *di.Dependency) IUserService <span class="cov8" title="1">{
+        return userService{
+                Dependencies: deps,
+                userRepo:     di.Get[database.IUserRepository](deps),
+        }
+}</span>
+
+func (s userService) GetUserByID(id string) (*domain.UserResponse, error) <span class="cov8" title="1">{
+        user, err := s.userRepo.GetUserByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return user, nil</span>
+}
+func (s userService) SearchUsers(user domain.User) ([]*domain.UserResponse, error) <span class="cov8" title="1">{
+        users, err := s.userRepo.Search(user)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return users, nil</span>
+}
+
+func (s userService) SearchUsersForAuth(user domain.User) ([]*domain.User, error) <span class="cov8" title="1">{
+        users, err := s.userRepo.SearchForAuth(user)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return users, nil</span>
+}
+func (s userService) CreateUser(user *domain.User) error <span class="cov8" title="1">{
+        if err := s.userRepo.InsertUser(user); err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+func (s userService) UpdateUser(id string, user *domain.User) error <span class="cov8" title="1">{
+        if err := s.userRepo.UpdateUser(id, user); err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+func (s userService) DeleteUser(id string) error <span class="cov8" title="1">{
+        if err := s.userRepo.DeleteUser(id); err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s userService) Authenticate(user *domain.User) error <span class="cov8" title="1">{
+        users, err := s.SearchUsersForAuth(domain.User{
+                Email: user.Email,
+        })
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">for _, u := range users </span><span class="cov8" title="1">{
+                if err := s.comparePassword(*user.Password, *u.Password); err != nil </span><span class="cov8" title="1">{
+                        continue</span>
+                }
+
+                <span class="cov8" title="1">*user = *u
+                break</span>
+        }
+
+        <span class="cov8" title="1">if user.ID == nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("invalid email or password")
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s userService) comparePassword(plainPassword string, hashedPassword string) error <span class="cov8" title="1">{
+        err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plainPassword))
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("invalid password")
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

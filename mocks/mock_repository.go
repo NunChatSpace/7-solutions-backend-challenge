@@ -48,6 +48,30 @@ func (mr *MockRepositoryMockRecorder) Session() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Session", reflect.TypeOf((*MockRepository)(nil).Session))
 }
 
+// SetSessionRepo mocks base method.
+func (m *MockRepository) SetSessionRepo(repo database.ISessionRepository) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetSessionRepo", repo)
+}
+
+// SetSessionRepo indicates an expected call of SetSessionRepo.
+func (mr *MockRepositoryMockRecorder) SetSessionRepo(repo interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSessionRepo", reflect.TypeOf((*MockRepository)(nil).SetSessionRepo), repo)
+}
+
+// SetUserRepo mocks base method.
+func (m *MockRepository) SetUserRepo(repo database.IUserRepository) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetUserRepo", repo)
+}
+
+// SetUserRepo indicates an expected call of SetUserRepo.
+func (mr *MockRepositoryMockRecorder) SetUserRepo(repo interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUserRepo", reflect.TypeOf((*MockRepository)(nil).SetUserRepo), repo)
+}
+
 // User mocks base method.
 func (m *MockRepository) User() database.IUserRepository {
 	m.ctrl.T.Helper()

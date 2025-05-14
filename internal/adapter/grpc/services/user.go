@@ -2,10 +2,10 @@ package services
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/grpc/gen/userpb"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/common"
+	userservices "github.com/NunChatSpace/7-solutions-backend-challenge/internal/core/services/user_services"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/di"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/domain"
 )
@@ -24,7 +24,8 @@ func (s *userServiceServer) CreateUser(ctx context.Context, req *userpb.CreateUs
 		Email:    &req.Email,
 		Password: &req.Password,
 	}
-	if err := s.Dependencies.Services.User().CreateUser(&user); err != nil {
+	userService := di.Get[userservices.IUserService](s.Dependencies)
+	if err := userService.CreateUser(&user); err != nil {
 		return nil, err
 	}
 
@@ -41,12 +42,12 @@ func (s *userServiceServer) CreateUser(ctx context.Context, req *userpb.CreateUs
 }
 
 func (s *userServiceServer) GetUser(ctx context.Context, req *userpb.GetUserRequest) (*userpb.GetUserResponse, error) {
-	user, err := s.Dependencies.Services.User().GetUserByID(req.Id)
+	userService := di.Get[userservices.IUserService](s.Dependencies)
+	user, err := userService.GetUserByID(req.Id)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Printf("grpc user: %v\n", user)
 	return &userpb.GetUserResponse{
 		User: &userpb.UserResponse{
 			Id:        common.SafeString(user.ID),

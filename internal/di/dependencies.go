@@ -1,32 +1,34 @@
 package di
 
 import (
-	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/database"
-	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/database/mongo/repositories"
+	"fmt"
+
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/config"
-	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/core/services"
-	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/domain"
-	"github.com/sirupsen/logrus"
 )
 
 type Dependency struct {
-	Config       *config.Config
-	Repositories database.Repository
-	Services     services.IServices
-	Actor        *domain.User
-	Logger       *logrus.Entry
+	deps map[interface{}]interface{}
 }
 
 func NewDependency(cfg *config.Config) *Dependency {
-	repositories, err := repositories.NewMongoRepository(cfg)
-	if err != nil {
-		panic(err)
+	deps := &Dependency{
+		deps: make(map[interface{}]interface{}),
 	}
-	services := services.NewServices(repositories, cfg)
+	Provide(deps, cfg)
+	return deps
+}
 
-	return &Dependency{
-		Config:       cfg,
-		Repositories: repositories,
-		Services:     services,
+func Provide[T any](d *Dependency, impl T) {
+	key := fmt.Sprintf("%T", new(T))
+	d.deps[key] = impl
+}
+
+func Get[T any](d *Dependency) T {
+	_t := new(T)
+	key := fmt.Sprintf("%T", _t)
+	val, ok := d.deps[key]
+	if !ok {
+		panic(key + " was not provided")
 	}
+	return val.(T)
 }

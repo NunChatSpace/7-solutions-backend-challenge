@@ -10,9 +10,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/database"
+	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/database/mongo/repositories"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/grpc"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/http"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/config"
+	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/core/services"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/di"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/domain"
 	"github.com/savsgio/atreugo/v11"
@@ -24,8 +27,14 @@ func main() {
 		panic(err)
 	}
 
-	appConfig := atreugo.Config{Addr: cfg.App.Port}
+	appConfig := atreugo.Config{
+		Addr:             cfg.App.Port,
+		GracefulShutdown: true,
+	}
 	deps := di.NewDependency(cfg)
+
+	repositories.ProvideRepositories(deps)
+	services.ProvideServices(deps)
 
 	server := http.NewServer(deps, appConfig)
 	grpcServer := grpc.NewGRPCServer(deps)
@@ -45,7 +54,8 @@ func main() {
 				log.Println("Shutting down background user logger")
 				return
 			case <-ticker.C:
-				users, err := deps.Repositories.User().Search(domain.User{})
+				userRepo := di.Get[database.IUserRepository](deps)
+				users, err := userRepo.Search(domain.User{})
 				if err != nil {
 					log.Printf("Error fetching users: %v\n", err)
 					continue

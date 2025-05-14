@@ -2,26 +2,36 @@ package userservices_test
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"testing"
 
+	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/database"
+	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/common"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/config"
 	userservices "github.com/NunChatSpace/7-solutions-backend-challenge/internal/core/services/user_services"
+	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/di"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/domain"
+	testutils "github.com/NunChatSpace/7-solutions-backend-challenge/internal/test_utils"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/mocks"
 	"github.com/golang/mock/gomock"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var cfg *config.Config
 
 func TestMain(m *testing.M) {
-	if _cfg, err := config.LoadConfig(); err != nil {
+	var err error
+	cfg, err = config.LoadConfig()
+	if err != nil {
 		panic(err)
-	} else {
-		cfg = _cfg
 	}
+
+	os.Exit(m.Run()) // This is crucial to actually run the tests
 }
 
 func TestGetUserByID(t *testing.T) {
+	deps := testutils.NewTestDependency(cfg)
 	// Mock the database repository
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -29,25 +39,25 @@ func TestGetUserByID(t *testing.T) {
 	id := "1234"
 	Name := "John Doe"
 	Email := "john@doe.com"
-	expectedUser := &domain.User{
+	expectedUser := &domain.UserResponse{
 		ID:    &id,
 		Name:  &Name,
 		Email: &Email,
 	}
-	mockRepo := mocks.NewMockRepository(ctrl)
+
 	mockUserRepo := mocks.NewMockIUserRepository(ctrl)
+	mockUserRepo.EXPECT().GetUserByID("1").Return(expectedUser, nil).AnyTimes()
+	mockUserRepo.EXPECT().GetUserByID("2").Return(nil, errors.New("user not found")).AnyTimes()
 
-	mockRepo.EXPECT().User().Return(mockUserRepo).AnyTimes()
-	mockUserRepo.EXPECT().GetUserByID(1).Return(expectedUser, nil).AnyTimes()
-	mockUserRepo.EXPECT().GetUserByID(2).Return(nil, errors.New("user not found")).AnyTimes()
+	di.Provide[database.IUserRepository](deps, mockUserRepo)
 
-	userService := userservices.NewUserService(mockRepo, cfg)
+	userService := userservices.NewUserService(deps)
 
 	// Define the test cases
 	tests := []struct {
 		name     string
 		userID   string
-		expected *domain.User
+		expected *domain.UserResponse
 		err      error
 	}{
 		{
@@ -87,6 +97,7 @@ func TestGetUserByID(t *testing.T) {
 }
 
 func TestSearchUsers(t *testing.T) {
+	deps := testutils.NewTestDependency(cfg)
 	// Mock the database repository
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -99,20 +110,26 @@ func TestSearchUsers(t *testing.T) {
 		Name:  &Name,
 		Email: &Email,
 	}
-	expectedUsers := []*domain.User{expectedUser}
-	mockRepo := mocks.NewMockRepository(ctrl)
+	expectedUsers := []*domain.UserResponse{
+		&domain.UserResponse{
+			ID:    &id,
+			Name:  &Name,
+			Email: &Email,
+		},
+	}
+
 	mockUserRepo := mocks.NewMockIUserRepository(ctrl)
-	mockRepo.EXPECT().User().Return(mockUserRepo).AnyTimes()
 	mockUserRepo.EXPECT().Search(*expectedUser).Return(expectedUsers, nil).AnyTimes()
 	mockUserRepo.EXPECT().Search(domain.User{Name: &Name}).Return(nil, errors.New("user not found")).AnyTimes()
 	mockUserRepo.EXPECT().Search(domain.User{Email: &Email}).Return(nil, errors.New("user not found")).AnyTimes()
 
-	userService := userservices.NewUserService(mockRepo, cfg)
+	di.Provide[database.IUserRepository](deps, mockUserRepo)
+	userService := userservices.NewUserService(deps)
 	// Define the test cases
 	tests := []struct {
 		name     string
 		user     domain.User
-		expected []*domain.User
+		expected []*domain.UserResponse
 		err      error
 	}{
 		{
@@ -160,6 +177,7 @@ func TestSearchUsers(t *testing.T) {
 }
 
 func TestCreateUser(t *testing.T) {
+	deps := testutils.NewTestDependency(cfg)
 	// Mock the database repository
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -171,13 +189,13 @@ func TestCreateUser(t *testing.T) {
 		Name:  &Name,
 		Email: &Email,
 	}
-	mockRepo := mocks.NewMockRepository(ctrl)
+
 	mockUserRepo := mocks.NewMockIUserRepository(ctrl)
-	mockRepo.EXPECT().User().Return(mockUserRepo).AnyTimes()
 	mockUserRepo.EXPECT().InsertUser(expectedUser).Return(nil).AnyTimes()
 	mockUserRepo.EXPECT().InsertUser(&domain.User{Name: &Name}).Return(errors.New("user not found")).AnyTimes()
+	di.Provide[database.IUserRepository](deps, mockUserRepo)
 
-	userService := userservices.NewUserService(mockRepo, cfg)
+	userService := userservices.NewUserService(deps)
 	// Define the test cases
 	tests := []struct {
 		name string
@@ -209,6 +227,7 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestUpdateUser(t *testing.T) {
+	deps := testutils.NewTestDependency(cfg)
 	// Mock the database repository
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -221,13 +240,13 @@ func TestUpdateUser(t *testing.T) {
 		Name:  &Name,
 		Email: &Email,
 	}
-	mockRepo := mocks.NewMockRepository(ctrl)
 	mockUserRepo := mocks.NewMockIUserRepository(ctrl)
-	mockRepo.EXPECT().User().Return(mockUserRepo).AnyTimes()
-	mockUserRepo.EXPECT().UpdateUser(expectedUser).Return(expectedUser, nil).AnyTimes()
-	mockUserRepo.EXPECT().UpdateUser(&domain.User{Name: &Name}).Return(nil, errors.New("user not found")).AnyTimes()
+	mockUserRepo.EXPECT().UpdateUser(gomock.Any(), expectedUser).Return(nil).AnyTimes()
+	mockUserRepo.EXPECT().UpdateUser(gomock.Any(), &domain.User{Name: &Name}).Return(errors.New("user not found")).AnyTimes()
 
-	userService := userservices.NewUserService(mockRepo, cfg)
+	di.Provide[database.IUserRepository](deps, mockUserRepo)
+
+	userService := userservices.NewUserService(deps)
 	// Define the test cases
 	tests := []struct {
 		name     string
@@ -260,31 +279,22 @@ func TestUpdateUser(t *testing.T) {
 			if tt.err == nil && err != nil {
 				t.Errorf("expected no error, got %v", err)
 			}
-			if tt.user != nil && *tt.user.ID != *tt.expected.ID {
-				t.Errorf("expected user ID %s, got %s", *tt.expected.ID, *tt.user.ID)
-			}
-			if tt.user != nil && *tt.user.Name != *tt.expected.Name {
-				t.Errorf("expected user Name %s, got %s", *tt.expected.Name, *tt.user.Name)
-			}
-			if tt.user != nil && *tt.user.Email != *tt.expected.Email {
-				t.Errorf("expected user Email %s, got %s", *tt.expected.Email, *tt.user.Email)
-			}
 		})
 	}
 }
 
 func TestDeleteUser(t *testing.T) {
+	deps := testutils.NewTestDependency(cfg)
 	// Mock the database repository
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockRepo := mocks.NewMockRepository(ctrl)
 	mockUserRepo := mocks.NewMockIUserRepository(ctrl)
-	mockRepo.EXPECT().User().Return(mockUserRepo).AnyTimes()
-	mockUserRepo.EXPECT().DeleteUser(1).Return(nil).AnyTimes()
-	mockUserRepo.EXPECT().DeleteUser(2).Return(errors.New("user not found")).AnyTimes()
+	mockUserRepo.EXPECT().DeleteUser("1").Return(nil).AnyTimes()
+	mockUserRepo.EXPECT().DeleteUser("2").Return(errors.New("user not found")).AnyTimes()
+	di.Provide[database.IUserRepository](deps, mockUserRepo)
 
-	userService := userservices.NewUserService(mockRepo, cfg)
+	userService := userservices.NewUserService(deps)
 	// Define the test cases
 	tests := []struct {
 		name   string
@@ -310,6 +320,108 @@ func TestDeleteUser(t *testing.T) {
 			}
 			if tt.err == nil && err != nil {
 				t.Errorf("expected no error, got %v", err)
+			}
+		})
+	}
+}
+
+func TestAuthenticate(t *testing.T) {
+	deps := testutils.NewTestDependency(cfg)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Setup
+	mockUserRepo := mocks.NewMockIUserRepository(ctrl)
+
+	// Password setup
+	rawPassword := "secure123"
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(rawPassword), bcrypt.DefaultCost)
+
+	email := "test@example.com"
+	name := "Test User"
+	id := "1"
+
+	mockedUser := &domain.User{
+		ID:       &id,
+		Name:     &name,
+		Email:    &email,
+		Password: common.Ptr(string(hashedPassword)),
+	}
+
+	// Test cases
+	tests := []struct {
+		name         string
+		inputUser    *domain.User
+		mockedResult []*domain.User
+		mockedError  error
+		expectedErr  string
+	}{
+		{
+			name: "Successful authentication",
+			inputUser: &domain.User{
+				Email:    &email,
+				Password: &rawPassword,
+			},
+			mockedResult: []*domain.User{mockedUser},
+			mockedError:  nil,
+			expectedErr:  "",
+		},
+		{
+			name: "Wrong password",
+			inputUser: &domain.User{
+				Email:    &email,
+				Password: common.Ptr("wrongpassword"),
+			},
+			mockedResult: []*domain.User{mockedUser},
+			mockedError:  nil,
+			expectedErr:  "invalid email or password",
+		},
+		{
+			name: "User not found by email",
+			inputUser: &domain.User{
+				Email:    common.Ptr("unknown@example.com"),
+				Password: &rawPassword,
+			},
+			mockedResult: nil,
+			mockedError:  fmt.Errorf("user not found"),
+			expectedErr:  "user not found",
+		},
+	}
+
+	mockUserRepo.EXPECT().SearchForAuth(gomock.Any()).DoAndReturn(func(user domain.User) ([]*domain.User, error) {
+		for _, tc := range tests {
+			if user.Email != nil && *user.Email == *tc.inputUser.Email {
+				// convert to []*domain.UserResponse
+				var result []*domain.User
+				for _, u := range tc.mockedResult {
+					result = append(result, &domain.User{
+						ID:       u.ID,
+						Name:     u.Name,
+						Email:    u.Email,
+						Password: u.Password,
+					})
+				}
+				return result, tc.mockedError
+			}
+		}
+		return nil, fmt.Errorf("user not found")
+	}).AnyTimes()
+
+	di.Provide[database.IUserRepository](deps, mockUserRepo)
+
+	service := userservices.NewUserService(deps)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := service.Authenticate(tt.inputUser)
+			if tt.expectedErr != "" {
+				if err == nil || err.Error() != tt.expectedErr {
+					t.Errorf("expected error: %v, got: %v", tt.expectedErr, err)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("expected no error, got: %v", err)
+				}
 			}
 		})
 	}

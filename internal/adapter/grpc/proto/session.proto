@@ -1,17 +1,23 @@
-// session.proto
 syntax = "proto3";
+
 package session;
+
 option go_package = "/internal/adapter/grpc/gen/sessionpb";
+
+// Request to authenticate a user.
 message LoginRequest {
-    string email = 1;
-    string password = 2;
-  }
-  
-  message LoginResponse {
-    string access_token = 1;
-    string refresh_token = 2;
-  }
-  
-  service SessionService {
-    rpc Login(LoginRequest) returns (LoginResponse);
+  string email = 1; // User email
+  string password = 2; // User password
+}
+
+// Response with authentication tokens.
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+
+// Service for session management (login).
+service SessionService {
+  // Authenticate a user and return tokens.
+  rpc Login(LoginRequest) returns (LoginResponse);
 }

@@ -9,6 +9,10 @@ import (
 	"github.com/savsgio/atreugo/v11"
 )
 
+func Ptr[T any](v T) *T {
+	return &v
+}
+
 func BindQueryToStruct[T any](rc *atreugo.RequestCtx) (*T, error) {
 	queryParams := make(map[string]string)
 	rc.QueryArgs().VisitAll(func(key, value []byte) {

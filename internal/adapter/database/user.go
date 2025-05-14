@@ -7,6 +7,6 @@ type IUserRepository interface {
 	GetUserByID(id string) (*domain.UserResponse, error)
 	Search(user domain.User) ([]*domain.UserResponse, error)
 	SearchForAuth(user domain.User) ([]*domain.User, error)
-	UpdateUser(user *domain.User) error
+	UpdateUser(id string, user *domain.User) error
 	DeleteUser(id string) error
 }

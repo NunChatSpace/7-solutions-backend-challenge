@@ -22,7 +22,7 @@ func FromContext(ctx *atreugo.RequestCtx, name string) logrus.FieldLogger {
 	return logger.WithField("caller", name)
 }
 
-func Handler(ctx *atreugo.RequestCtx, dep *di.Dependency) error {
+func Handler(ctx *atreugo.RequestCtx, deps *di.Dependency) error {
 	start := time.Now()
 	logger := logrus.New()
 	cfg := cfgmd.FromContext(ctx)
@@ -48,7 +48,7 @@ func Handler(ctx *atreugo.RequestCtx, dep *di.Dependency) error {
 		ctx.SetUserValue("body", body)
 	}
 
-	dep.Logger = entry
+	di.Provide(deps, entry)
 	err = ctx.Next()
 
 	// Log execution time

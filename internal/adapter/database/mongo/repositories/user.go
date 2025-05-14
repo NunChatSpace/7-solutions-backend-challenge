@@ -92,7 +92,6 @@ func (u *UserRepository) InsertUser(user *domain.User) error {
 		return fmt.Errorf("inserted ID is not an ObjectID")
 	}
 
-	fmt.Println("Inserted user with ID:", user.ID)
 	return nil
 }
 
@@ -190,10 +189,10 @@ func (u *UserRepository) SearchForAuth(user domain.User) ([]*domain.User, error)
 	return users, nil
 }
 
-func (u *UserRepository) UpdateUser(user *domain.User) error {
+func (u *UserRepository) UpdateUser(id string, user *domain.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	oid, err := primitive.ObjectIDFromHex(*user.ID)
+	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return fmt.Errorf("invalid ObjectID: %w", err)
 	}

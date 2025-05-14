@@ -3,13 +3,13 @@ package userservices
 import (
 	"fmt"
 
-	dbrepo "github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/database"
-	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/config"
+	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/database"
+	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/di"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/domain"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Port interface {
+type IUserService interface {
 	GetUserByID(id string) (*domain.UserResponse, error)
 	SearchUsers(user domain.User) ([]*domain.UserResponse, error)
 	SearchUsersForAuth(user domain.User) ([]*domain.User, error)
@@ -21,27 +21,28 @@ type Port interface {
 }
 
 type userService struct {
-	Repository dbrepo.Repository
-	Config     *config.Config
+	Dependencies *di.Dependency
+
+	userRepo database.IUserRepository
 }
 
-func NewUserService(repo dbrepo.Repository, cfg *config.Config) Port {
-	return &userService{
-		Repository: repo,
-		Config:     cfg,
+func NewUserService(deps *di.Dependency) IUserService {
+	return userService{
+		Dependencies: deps,
+		userRepo:     di.Get[database.IUserRepository](deps),
 	}
 }
 
-func (s *userService) GetUserByID(id string) (*domain.UserResponse, error) {
-	user, err := s.Repository.User().GetUserByID(id)
+func (s userService) GetUserByID(id string) (*domain.UserResponse, error) {
+	user, err := s.userRepo.GetUserByID(id)
 	if err != nil {
 		return nil, err
 	}
 
 	return user, nil
 }
-func (s *userService) SearchUsers(user domain.User) ([]*domain.UserResponse, error) {
-	users, err := s.Repository.User().Search(user)
+func (s userService) SearchUsers(user domain.User) ([]*domain.UserResponse, error) {
+	users, err := s.userRepo.Search(user)
 	if err != nil {
 		return nil, err
 	}
@@ -49,35 +50,35 @@ func (s *userService) SearchUsers(user domain.User) ([]*domain.UserResponse, err
 	return users, nil
 }
 
-func (s *userService) SearchUsersForAuth(user domain.User) ([]*domain.User, error) {
-	users, err := s.Repository.User().SearchForAuth(user)
+func (s userService) SearchUsersForAuth(user domain.User) ([]*domain.User, error) {
+	users, err := s.userRepo.SearchForAuth(user)
 	if err != nil {
 		return nil, err
 	}
 
 	return users, nil
 }
-func (s *userService) CreateUser(user *domain.User) error {
-	if err := s.Repository.User().InsertUser(user); err != nil {
+func (s userService) CreateUser(user *domain.User) error {
+	if err := s.userRepo.InsertUser(user); err != nil {
 		return err
 	}
 	return nil
 }
-func (s *userService) UpdateUser(id string, user *domain.User) error {
-	if err := s.Repository.User().UpdateUser(user); err != nil {
+func (s userService) UpdateUser(id string, user *domain.User) error {
+	if err := s.userRepo.UpdateUser(id, user); err != nil {
 		return err
 	}
 
 	return nil
 }
-func (s *userService) DeleteUser(id string) error {
-	if err := s.Repository.User().DeleteUser(id); err != nil {
+func (s userService) DeleteUser(id string) error {
+	if err := s.userRepo.DeleteUser(id); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *userService) Authenticate(user *domain.User) error {
+func (s userService) Authenticate(user *domain.User) error {
 	users, err := s.SearchUsersForAuth(domain.User{
 		Email: user.Email,
 	})
@@ -90,11 +91,11 @@ func (s *userService) Authenticate(user *domain.User) error {
 			continue
 		}
 
-		user = u
+		*user = *u
 		break
 	}
 
-	if user == nil {
+	if user.ID == nil {
 		return fmt.Errorf("invalid email or password")
 	}
 

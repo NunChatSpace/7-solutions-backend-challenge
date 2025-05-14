@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/adapter/grpc/gen/sessionpb"
+	sessionservices "github.com/NunChatSpace/7-solutions-backend-challenge/internal/core/services/session_services"
+	userservices "github.com/NunChatSpace/7-solutions-backend-challenge/internal/core/services/user_services"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/di"
 	"github.com/NunChatSpace/7-solutions-backend-challenge/internal/domain"
 )
@@ -20,8 +22,8 @@ func NewSessionServiceServer(deps *di.Dependency) sessionpb.SessionServiceServer
 }
 
 func (s *sessionServiceServer) Login(ctx context.Context, req *sessionpb.LoginRequest) (*sessionpb.LoginResponse, error) {
-	userService := s.Dependencies.Services.User()
-	sessionService := s.Dependencies.Services.Session()
+	userService := di.Get[userservices.IUserService](s.Dependencies)
+	sessionService := di.Get[sessionservices.ISessionService](s.Dependencies)
 	user := domain.User{
 		Email:    &req.Email,
 		Password: &req.Password,

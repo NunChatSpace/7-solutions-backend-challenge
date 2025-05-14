@@ -1,20 +1,21 @@
-// user.proto
 syntax = "proto3";
 
 package user;
 
 option go_package = "/internal/adapter/grpc/gen/userpb";
 
+// A user entity in the system.
 message User {
-  string id = 1;
-  string name = 2;
-  string email = 3;
-  string password = 4;
-  string createdAt = 5;
-  string updatedAt = 6;
-  map<string, int32> scopes = 7;
+  string id = 1; // Unique user ID
+  string name = 2; // Full name
+  string email = 3; // Email address
+  string password = 4; // User password (should be hashed)
+  string createdAt = 5; // Timestamp of creation
+  string updatedAt = 6; // Timestamp of last update
+  map<string, int32> scopes = 7; // Permission scopes
 }
 
+// User object returned to clients (without password).
 message UserResponse {
   string id = 1;
   string name = 2;
@@ -24,24 +25,32 @@ message UserResponse {
   map<string, int32> scopes = 6;
 }
 
+// Request to create a user.
 message CreateUserRequest {
   string email = 1;
   string password = 2;
 }
 
+// Response after creating a user.
 message CreateUserResponse {
   UserResponse user = 1;
 }
 
+// Request to get a user by ID.
 message GetUserRequest {
   string id = 1;
 }
 
+// Response containing the user data.
 message GetUserResponse {
   UserResponse user = 1;
 }
 
+// Service for user management.
 service UserService {
+  // Create a new user.
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+
+  // Retrieve a user by ID.
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
 }
